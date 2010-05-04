@@ -1,5 +1,5 @@
 #include "IndexedDatabase.h"
-#include "Sync/DatabaseSync.h"
+#include "Synchronized/DatabaseSync.h"
 #include "DatabaseException.h"
 
 using std::string;

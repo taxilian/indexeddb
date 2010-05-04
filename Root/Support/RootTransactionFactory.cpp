@@ -1,6 +1,6 @@
 #include "RootTransactionFactory.h"
-#include "../Bridge/Sync/TransactionSync.h"
-#include "../Bridge/Sync/DatabaseSync.h"
+#include "../API/Synchronized/TransactionSync.h"
+#include "../API/Synchronized/DatabaseSync.h"
 #include "../Implementation/Database.h"
 
 using boost::optional;

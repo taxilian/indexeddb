@@ -1,6 +1,6 @@
 #include "IndexedDatabasePluginAPI.h"
-#include "Source/API/KeyRange.h"
-#include "Source/API/Cursor.h"
+#include "Root/API/KeyRange.h"
+#include "Root/API/Cursor.h"
 
 IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHost host) 
 	: host(host), EnvironmentSync(host)

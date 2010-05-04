@@ -1,7 +1,7 @@
 #include <sstream>
 #include <boost/tokenizer.hpp>
 #include "Metadata.h"
-#include "../Bridge/DatabaseException.h"
+#include "../API/DatabaseException.h"
 #include "../Implementation/Transaction.h"
 
 using std::auto_ptr;

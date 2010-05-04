@@ -2,7 +2,7 @@
 #include "BrowserObjectAPI.h"
 #include "util/JSArray.h"
 #include "DOM/JSAPI_DomWindow.h"
-#include "../Bridge/DatabaseException.h"
+#include "../API/DatabaseException.h"
 
 using std::string;
 

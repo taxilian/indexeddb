@@ -25,6 +25,26 @@ set (SOURCES
     ${PLATFORM}
     )
 
+set (BDB_INCLUDE_DIR 
+		"$ENV{PROGRAMFILES}/Oracle/Berkeley DB 4.8.26/include"
+		"$ENV{PROGRAMFILES(x86)}/Oracle/Berkeley DB 4.8.26/include")
+set (BDB_LIBRARY_DIR 
+		"$ENV{PROGRAMFILES}/Oracle/Berkeley DB 4.8.26/lib/libdb48d.lib"
+		"$ENV{PROGRAMFILES(x86)}/Oracle/Berkeley DB 4.8.26/lib/libdb48d.lib"
+		)
+
+set (BOOST_INCLUDE_DIR 
+	"$ENV{BOOST_HOME}/include/boost-1_40")
+set (BOOST_LIBRARY_DIR 
+	"$ENV{BOOST_HOME}/lib/libboost_thread-vc90-mt-sgd-1_40.lib"
+	"$ENV{BOOST_HOME}/lib/libboost_date_time-vc90-mt-sgd-1_40.lib"
+	"$ENV{BOOST_HOME}/lib/libboost_filesystem-vc90-mt-sgd-1_40.lib"
+	"$ENV{BOOST_HOME}/lib/libboost_system-vc90-mt-sgd-1_40.lib"
+	)
+
+include_directories(${BDB_INCLUDE_DIR}) 
+include_directories(${BOOST_INCLUDE_DIR}) 
+
 add_library(${PROJNAME} SHARED ${SOURCES})
 
 set_target_properties (${PROJNAME} PROPERTIES
@@ -37,6 +57,8 @@ set_target_properties (${PROJNAME} PROPERTIES
 # add library dependencies here; leave ${PLUGIN_INTERNAL_DEPS} there unless you know what you're doing!
 target_link_libraries(${PROJNAME}
     ${PLUGIN_INTERNAL_DEPS}
+    ${BDB_LIBRARY_DIR}
+    ${BOOST_LIBRARY_DIR}
     )
 
 add_dependencies(${PROJNAME}
@@ -57,3 +79,4 @@ add_wix_installer( ${PLUGIN_NAME}
     ${BIN_DIR}/${PLUGIN_NAME}/${CMAKE_CFG_INTDIR}/np${PLUGIN_NAME}.dll
     ${PROJNAME}
     )
+
