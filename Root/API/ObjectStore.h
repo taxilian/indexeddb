@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #ifndef BRANDONHAYNES_INDEXEDDB_API_OBJECTSTORE_H
 #define BRANDONHAYNES_INDEXEDDB_API_OBJECTSTORE_H
 

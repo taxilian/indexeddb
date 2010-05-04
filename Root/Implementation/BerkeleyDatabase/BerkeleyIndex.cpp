@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include "BerkeleyIndex.h"
 #include "BerkeleyDatabase.h"
 #include "BerkeleyObjectStore.h"

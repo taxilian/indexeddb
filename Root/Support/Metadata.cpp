@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include <sstream>
 #include <boost/tokenizer.hpp>
 #include "Metadata.h"

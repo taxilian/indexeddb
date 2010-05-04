@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include <DOM/JSAPI_DOMDocument.h>
 #include "DatabaseSync.h"
 #include "TransactionSync.h"

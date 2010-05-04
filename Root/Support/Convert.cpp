@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include "Convert.h"
 #include "BrowserObjectAPI.h"
 #include "util/JSArray.h"

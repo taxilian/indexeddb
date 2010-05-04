@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include "RootTransactionFactory.h"
 #include "../API/Synchronized/TransactionSync.h"
 #include "../API/Synchronized/DatabaseSync.h"

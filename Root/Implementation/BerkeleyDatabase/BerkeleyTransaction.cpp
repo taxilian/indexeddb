@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include <db_cxx.h>
 #include "BerkeleyTransaction.h"
 #include "BerkeleyDatabase.h"

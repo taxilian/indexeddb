@@ -1,3 +1,8 @@
+/**********************************************************\
+See http://code.google.com/p/indexeddb for license
+Copyright Brandon Haynes
+\**********************************************************/
+
 #include "TransactionSync.h"
 #include "DatabaseSync.h"
 #include "../DatabaseException.h"
