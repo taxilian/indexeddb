@@ -37,10 +37,10 @@ const string DatabaseLocation::getEnvironmentPath(const string& origin, const st
 
 	try
 		{
-		if(!exists(originRoot))
-			create_directory(originRoot);
 		if(!exists(environmentRoot))
 			create_directory(environmentRoot);
+		if(!exists(originRoot))
+			create_directory(originRoot);
 		if(!exists(environmentHome))
 			create_directory(environmentHome);
 		}
