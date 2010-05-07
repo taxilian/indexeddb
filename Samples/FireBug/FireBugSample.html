@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+
+<head> 
+    <title>FireBug Sample Environment</title> 
+
+    <object id="db" type="application/x-indexeddatabase" width="1" height="1"></object>
+</head>
+
+<body>
+
+<h1>FireBug Sample Environment</h1>
+
+<p>
+This page contains an instance of the Indexed Database API plug-in.
+</p>
+<p>
+Use FireBug or another JavaScript debugging utility to directly
+manipulate the database environment.  The API entry-point is through the "db" handle, so to open a new connection, execute
+the following:
+</p>
+
+<pre>
+	document.db.indexedDB.open("myConnectionName", "A description.");
+</pre>
+
+</body> 
+</html> 

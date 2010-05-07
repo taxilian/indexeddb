@@ -1,0 +1,196 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Index Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var READ_WRITE = 0;
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                objectStore = connection.createObjectStore(makeRandomName(), null, true);
+            }
+
+            function tearDown() {
+                objectStore = undefined;
+            }
+
+            function testClosedObjectStore() {
+                var key = makeRandomName();
+                var value = makeRandomName();
+
+                objectStore.put(value, key);
+
+                connection.removeObjectStore(objectStore.name);
+
+                assertClosureThrows(function() {
+                    objectStore.get(key);
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testIndexAfterObjectStoreRemoved() {
+                var key = makeRandomName();
+                var data = {
+                    primary: makeRandomName(),
+                    secondary: makeRandomName()
+                };
+                var indexName = makeRandomName();
+                var keyPath = "secondary";
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, keyPath, true);
+
+                assertObjectEquals(key, index.get(data.secondary));
+
+                connection.removeObjectStore(objectStore.name);
+
+                assertClosureThrows(function() {
+                    index.get(data.secondary)
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testCursorAfterObjectStoreRemoved() {
+                var key = makeRandomName();
+                var data = {
+                    primary: makeRandomName(),
+                    secondary: makeRandomName()
+                };
+                var keyPath = "secondary";
+
+                objectStore.put(data, key);
+
+                var cursor = objectStore.openCursor();
+
+                assertObjectEquals(key, cursor.key);
+                assertObjectEquals(data, cursor.value);
+
+                connection.removeObjectStore(objectStore.name);
+
+                assertClosureThrows(function() {
+                    cursor.key
+                }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() {
+                    cursor.value
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testIndexCursorAfterObjectStoreRemoved() {
+                var key = makeRandomName();
+                var secondary = makeRandomName();
+                var indexName = makeRandomName();
+                var data = {
+                    primary: makeRandomName(),
+                    secondary: secondary
+                };
+                var keyPath = "secondary";
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, keyPath, true);
+                var cursor = index.openCursor();
+
+                assertObjectEquals(secondary, cursor.key);
+
+                connection.removeObjectStore(objectStore.name);
+
+                assertClosureThrows(function() {
+                    cursor.key
+                }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() {
+                    cursor.value
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testIndexCursorAfterIndexRemoved() {
+                var key = makeRandomName();
+                var secondary = makeRandomName();
+                var indexName = makeRandomName();
+                var data = {
+                    primary: makeRandomName(),
+                    secondary: secondary
+                };
+                var keyPath = "secondary";
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, keyPath, true);
+                var cursor = index.openCursor();
+
+                assertObjectEquals(secondary, cursor.key);
+
+                objectStore.removeIndex(index.name);
+
+                assertClosureThrows(function() {
+                    cursor.key
+                }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() {
+                    cursor.value
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testIndexCursorAfterManualIndexRemoved() {
+                var key = makeRandomName();
+                var secondary = makeRandomName();
+                var indexName = makeRandomName();
+                var data = makeRandomName();
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(key, secondary);
+
+                var cursor = index.openCursor();
+
+                assertObjectEquals(secondary, cursor.key);
+
+                objectStore.removeIndex(index.name);
+
+                assertClosureThrows(function() {
+                    cursor.key
+                }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() {
+                    cursor.value
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testTransactionAfterObjectStoreRemoved() {
+                var objectStoreName = objectStore.name;
+                var key = makeRandomName();
+                var secondary = makeRandomName();
+                var indexName = makeRandomName();
+                var data = makeRandomName();
+
+                objectStore.put(data, key);
+
+                var transaction = connection.transaction();
+
+                connection.removeObjectStore(objectStoreName);
+
+                transaction.abort();
+
+                var objectStore2 = connection.openObjectStore(objectStoreName);
+
+                assertEquals(data, objectStore2.get(key));
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Index Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

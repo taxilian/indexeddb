@@ -1,0 +1,115 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Object Store Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var database;
+            var READ_WRITE = 0;
+            var READ_ONLY = 1;
+            var SNAPSHOT_READ = 2;
+
+            function setUp() {
+                database = db.indexedDB.open(makeRandomName(), "Object store unit tests");
+            }
+
+            function tearDown() {
+                database = undefined;
+            }
+
+            function testCreateObjectStore() {
+                var objectStore = database.createObjectStore(makeRandomName(), "keypath");
+                assertNotNull(objectStore);
+            }
+
+            function testCreateObjectStoreWithKeyPath() {
+                var keypath = "myKeypath";
+                var objectStore = database.createObjectStore(makeRandomName(), keypath);
+                assertNotNull(objectStore);
+                assertEquals(keypath, objectStore.keyPath);
+            }
+
+            function testCreateObjectStoreWithoutKeyPath() {
+                var objectStore = database.createObjectStore(makeRandomName(), null);
+                assertNotNull(objectStore);
+                assertNull(objectStore.keyPath);
+            }
+
+            function testCreateObjectStoreWithAutoIncrement() {
+                var objectStore = database.createObjectStore(makeRandomName(), "keypath", true);
+                assertNotNull(objectStore);
+            }
+
+            function testOpenObjectStore() {
+                name = makeRandomName();
+
+                database.createObjectStore(name, null);
+
+                var objectStore = database.openObjectStore(name);
+                assertNotNull(objectStore);
+            }
+
+            function testObjectStoreMode() {
+                var objectStore = database.createObjectStore(makeRandomName(), "Object store unit tests");
+                assertNotNull(objectStore.mode);
+            }
+
+            function testObjectStoreName() {
+                var name = makeRandomName();
+                var objectStore = database.createObjectStore(name, "Object store unit tests");
+                assertEquals(name, objectStore.name);
+            }
+
+            function testOpenReadOnlyObjectStore() {
+                name = makeRandomName();
+
+                database.createObjectStore(name, "Object store unit tests");
+
+                var objectStore = database.openObjectStore(name, READ_ONLY);
+                assertNotNull(objectStore);
+                assertEquals(READ_ONLY, objectStore.mode);
+            }
+
+            function testOpenSnapshotObjectStore() {
+                name = makeRandomName();
+
+                database.createObjectStore(name, "Object store unit tests");
+
+                var objectStore = database.openObjectStore(name, SNAPSHOT_READ);
+                assertNotNull(objectStore);
+                assertEquals(SNAPSHOT_READ, objectStore.mode);
+            }
+
+            function testOpenReadWriteObjectStore() {
+                name = makeRandomName();
+
+                database.createObjectStore(name, "Object store unit tests");
+
+                var objectStore = database.openObjectStore(name, READ_WRITE);
+                assertNotNull(objectStore);
+                assertEquals(READ_WRITE, objectStore.mode);
+            }
+
+            function testIndexNames() {
+                var objectStore = database.createObjectStore(makeRandomName(), null);
+                assertArrayEquals("IndexNames propery should be empty", objectStore.indexNames, Array());
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Object Store Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

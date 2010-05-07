@@ -1,0 +1,183 @@
+<html> 
+ 
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+    <title>Indexed Database Object Store Tests</title> 
+    <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js"></script> 
+    <script language="JavaScript" type="text/javascript" src="common.js"></script> 
+    <script language="JavaScript" type="text/javascript">
+        var database;
+
+        function setUp() {
+            database = db.indexedDB.open(makeRandomName(), "Object store unit tests");
+        }
+
+        function tearDown() {
+            database = undefined;
+        }
+
+        function testPut() {
+            var objectStore = database.createObjectStore(makeRandomName(), null);
+
+            assertEquals("key", objectStore.put("value", "key"));
+            assertEquals("value", objectStore.get("key"));
+        }
+
+        function testPutObject() {
+            var value = { foo: "bar", asdf: "qwer" };
+            var objectStore = database.createObjectStore(makeRandomName(), "foo");
+
+            assertEquals("bar", objectStore.put(value));
+
+            var result = objectStore.get("bar");
+            assertNotNull(result);
+            assertEquals("bar", result.foo);
+            assertEquals("qwer", result.asdf);
+        }
+
+        function testPutDateObject() {
+            var value = new Date();
+            var objectStore = database.createObjectStore(makeRandomName(), null);
+            objectStore.put(value, "key");
+            assertEquals(value, objectStore.get("key"));
+        }
+
+        function testPutObjectWithKeyPath() {
+            var value = { foo: "bar", asdf: "qwer" };
+            var keyPath = "asdf"
+            var objectStore = database.createObjectStore(makeRandomName(), keyPath);
+
+            assertEquals(value.asdf, objectStore.put(value));
+
+            var result = objectStore.get(value.asdf);
+            assertNotNull(result);
+            assertEquals("bar", result.foo);
+            assertEquals("qwer", result.asdf);
+        }
+
+        function testPutObjectWithIncrement() {
+            var value1 = "value1";
+            var value2 = "value2";
+            var objectStore = database.createObjectStore(makeRandomName(), null, true);
+
+            assertEquals(1, objectStore.put(value1));
+            assertEquals(2, objectStore.put(value2));
+
+            assertEquals(value1, objectStore.get(1));
+            assertEquals(value2, objectStore.get(2));
+        }
+
+        function testRemove() {
+            var objectStore = database.createObjectStore(makeRandomName(), null, true);
+            objectStore.put("value", "key");
+            objectStore.remove("key");
+
+            assertClosureThrows(function() { objectStore.get("key"); }, "NOT_FOUND_ERR");
+        }
+
+        function testReadOnlyObjectStore() {
+            var objectStoreName = makeRandomName();
+            database.createObjectStore(objectStoreName, null, true);
+            var objectStore = database.openObjectStore(objectStoreName, READ_ONLY);
+
+            assertClosureThrows(function() { objectStore.put("value", "key"); }, "NOT_ALLOWED_ERR");
+        }
+
+        function testInvalidObjectStoreOpen() {
+            assertClosureThrows(function() { database.openObjectStore(makeRandomName()); }, "NOT_FOUND_ERR");
+        }
+
+        function testInvalidObjectStoreRemove() {
+            assertClosureThrows(function() { database.removeObjectStore(makeRandomName()); }, "NOT_FOUND_ERR");
+        }
+
+        function testSingleIndexName() {
+            var objectStore = database.createObjectStore(makeRandomName(), null, true);
+            var indexName1 = makeRandomName();
+
+            objectStore.createIndex(indexName1, "");
+            assertArrayEqualsIgnoringOrder("IndexName1 not found", [indexName1], objectStore.indexNames);
+        }
+
+        function testMultipleIndexNames() {
+            var objectStore = database.createObjectStore(makeRandomName(), null, true);
+            var indexName1 = makeRandomName();
+            var indexName2 = makeRandomName();
+            var indexName3 = makeRandomName();
+            var indexName4 = makeRandomName();
+
+            objectStore.createIndex(indexName1, "");
+            objectStore.createIndex(indexName2, "");
+
+            assertArrayEqualsIgnoringOrder([indexName1, indexName2], objectStore.indexNames);
+
+            objectStore.createIndex(indexName3, "");
+            assertArrayEqualsIgnoringOrder([indexName1, indexName2, indexName3], objectStore.indexNames);
+
+            objectStore.createIndex(indexName4, "");
+            assertArrayEqualsIgnoringOrder([indexName1, indexName2, indexName3, indexName4], objectStore.indexNames);
+        }
+
+        function testPersistedIndexes() {
+            var objectStoreName = makeRandomName();
+            var indexName1 = makeRandomName();
+            var indexName2 = makeRandomName();
+
+            var objectStore = database.createObjectStore(objectStoreName, null, true);
+            objectStore.createIndex(indexName1, "");
+            objectStore.createIndex(indexName2, "");
+
+            var objectStore2 = database.openObjectStore(objectStoreName);
+            assertArrayEqualsIgnoringOrder(objectStore2.indexNames, [indexName1, indexName2]);
+        }
+
+        function testRemovedIndexes() {
+            var objectStoreName = makeRandomName();
+            var indexName1 = makeRandomName();
+            var indexName2 = makeRandomName();
+
+            var objectStore = database.createObjectStore(objectStoreName, null, true);
+            objectStore.createIndex(indexName1, "");
+            objectStore.createIndex(indexName2, "");
+
+            objectStore.removeIndex(indexName1);
+            assertArrayEqualsIgnoringOrder(objectStore.indexNames, [indexName2]);
+        }
+
+        function testPersistedRemovedIndexes() {
+            var objectStoreName = makeRandomName();
+            var indexName1 = makeRandomName();
+            var indexName2 = makeRandomName();
+
+            var objectStore = database.createObjectStore(objectStoreName, null, true);
+            objectStore.createIndex(indexName1, "");
+            objectStore.createIndex(indexName2, "");
+            objectStore.removeIndex(indexName1);
+
+            var objectStore2 = database.openObjectStore(objectStoreName);
+            assertArrayEqualsIgnoringOrder(objectStore2.indexNames, [indexName2]);
+        }
+
+        function testMultipleObjectStoreConnections() {
+            var objectStoreName = makeRandomName();
+            var objectStore1 = database.createObjectStore(objectStoreName, null, true);
+
+            objectStore1.put("value", "key");
+
+            // This should go out of scope and be destroyed
+            var connectAgain = function() { database.openObjectStore(objectStoreName); }
+            connectAgain();
+
+            assertEquals("value", objectStore1.get("key"));
+        }
+    </script>
+</head>
+
+<body> 
+    <h1>Indexed Database Object Store Tests</h1> 
+ 
+    <p>This page contains unit tests. To see them, take a look at the source.</p> 
+
+    <object id="db" type="application/x-indexeddatabase" width="1" height="1"></object>
+</body> 
+</html> 

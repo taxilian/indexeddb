@@ -1,0 +1,40 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+    <title>Indexed Database Unit Tests</title>
+    <script language="JavaScript" type="text/javascript" src="app/jsUnitCore.js"></script> 
+    <script language="JavaScript" type="text/javascript">
+        function testSuite() {
+            var result = new top.jsUnitTestSuite();
+            result.addTestPage("IndexedDatabaseAPITests/security.html");
+            result.addTestPage("IndexedDatabaseAPITests/deadlocks.html");
+            result.addTestPage("IndexedDatabaseAPITests/closedEntities.html");
+            result.addTestPage("IndexedDatabaseAPITests/staticTransactions.html");
+            result.addTestPage("IndexedDatabaseAPITests/invalidCursorRanges.html");
+            result.addTestPage("IndexedDatabaseAPITests/indexCursorRanges.html");
+            result.addTestPage("IndexedDatabaseAPITests/cursors.html");
+            result.addTestPage("IndexedDatabaseAPITests/manualIndexCursorRanges.html");
+            result.addTestPage("IndexedDatabaseAPITests/indexes.html");
+            result.addTestPage("IndexedDatabaseAPITests/cursorReverseRanges.html");
+            result.addTestPage("IndexedDatabaseAPITests/cursorRanges.html");
+            result.addTestPage("IndexedDatabaseAPITests/objectStoreSync.html");
+            result.addTestPage("IndexedDatabaseAPITests/objectStores.html");
+            result.addTestPage("IndexedDatabaseAPITests/databases.html");
+            result.addTestPage("IndexedDatabaseAPITests/connections.html");
+            return result;
+        }
+
+        function suite() {
+            var newsuite = new top.jsUnitTestSuite();
+            newsuite.addTestSuite(testSuite());
+            return newsuite;
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Indexed Database Test Suite</h1> 
+     
+    <p>This page contains a suite of tests for testing the Indexed Database API.</p> 
+</body>
+</html>

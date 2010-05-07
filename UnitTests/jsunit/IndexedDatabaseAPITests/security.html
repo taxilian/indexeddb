@@ -1,0 +1,93 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Security Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            function testSecurity_DangerousConnectionName() {
+                assertClosureThrows(function() {
+                    db.indexedDB.open("../www.brandonhaynes.org", "")
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testSecurity_DangerousConnectionName2() {
+                assertClosureThrows(function() {
+                    db.indexedDB.open("/etc", "")
+                }, "NON_TRANSIENT_ERR");
+            }
+
+
+            function testSecurity_DangerousCreateObjectStore() {
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.createObjectStore("../../www.brandonhaynes.org/mydb", undefined)
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testSecurity_DangerousCreateObjectStore2() {
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.createObjectStore("C:\\Users\\Brandon\\AppData\\Roaming\\indexedDB\\www.brandonhaynes.org\\mydb", undefined)
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testSecurity_DangerousCreateObjectStore3() {
+                var targetConnectionName = makeRandomName();
+                var targetObjectStoreName = makeRandomName();
+                var connection = db.indexedDB.open(targetConnectionName, makeRandomName());
+                connection.createObjectStore(targetObjectStoreName, undefined);
+
+                connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.openObjectStore("../" + targetConnectionName + "/" + targetObjectStoreName)
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testSecurity_DuplicateCreateObjectStore() {
+                var objectStoreName = makeRandomName();
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                connection.createObjectStore(objectStoreName, undefined);
+                assertClosureThrows(function() {
+                    connection.createObjectStore(objectStoreName, undefined)
+                }, "CONSTRAINT_ERR");
+            }
+
+            function testSecurity_DangerousOpenObjectStore() {
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.openObjectStore("../www.brandonhaynes.org/mydb")
+                }, "NON_TRANSIENT_ERR");
+            }
+
+            function testSecurity_DangerousRemoveObjectStore() {
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.removeObjectStore("../../www.brandonhaynes.org/mydb")
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testSecurity_DangerousRemoveObjectStore2() {
+                var connection = db.indexedDB.open(makeRandomName(), makeRandomName());
+                assertClosureThrows(function() {
+                    connection.removeObjectStore("C:\\Users\\Brandon\\AppData\\Roaming\\indexedDB\\www.brandonhaynes.org\\mydb")
+                }, "NOT_FOUND_ERR");
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Security Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

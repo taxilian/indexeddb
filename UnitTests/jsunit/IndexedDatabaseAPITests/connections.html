@@ -1,0 +1,42 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Connection Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            function testPluginExists() {
+                assertNotNull(db.indexedDB);
+            }
+
+            function testConnection() {
+                var connection = db.indexedDB.open(makeRandomName(), "Testing connection");
+                assertNotNull(connection);
+                //connection.close(); Not in API?
+            }
+
+            function testMultipleConnection() {
+                var name = makeRandomName();
+                var connection = db.indexedDB.open(name, "Testing connection");
+                var connection2 = db.indexedDB.open(name, "Testing second connection");
+                assertNotNull(connection2);
+                //connection.close(); Not in API?
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Connection Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

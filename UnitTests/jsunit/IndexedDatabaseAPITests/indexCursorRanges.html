@@ -1,0 +1,235 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Indexed Cursor Range Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var fruits, fruitIndexByColor;
+            var index;
+            var indexKeyLambda = function(i) {
+                return String.fromCharCode(65 + i);
+            };
+            var indexValueLambda = function(i) {
+                return i;
+            };
+
+            /* ABCDEFGHIJKLMNOPQRSTUVWXYZ 
+            01234567890123456789012345*/
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Indexed cursor range unit tests");
+
+                objectStore = connection.createObjectStore(makeRandomName(), "primary", true);
+                index = objectStore.createIndex(makeRandomName(), "secondary", true);
+                for (var i = 0; i < 26; i++) {
+                    var obj = {
+                        primary: i,
+                        secondary: String.fromCharCode(65 + i)
+                    };
+                    objectStore.put(obj);
+                }
+
+                var isUnique = false;
+                fruits = connection.createObjectStore(makeRandomName(), "fruit", true);
+                fruitIndexByColor = fruits.createIndex(makeRandomName(), "color", isUnique);
+
+                fruits.put({
+                    fruit: "Apple",
+                    color: "Red"
+                });
+                fruits.put({
+                    fruit: "Orange",
+                    color: "Orange"
+                });
+                fruits.put({
+                    fruit: "Tangerine",
+                    color: "Orange"
+                });
+                fruits.put({
+                    fruit: "Grape",
+                    color: "Purple"
+                });
+                fruits.put({
+                    fruit: "Pomegranate",
+                    color: "Red"
+                });
+            }
+
+            function tearDown() {
+                objectStore.removeIndex(index.name);
+                connection.removeObjectStore(objectStore.name);
+
+                fruits.removeIndex(fruitIndexByColor.name);
+                connection.removeObjectStore(fruits.name);
+                objectStore = undefined;
+            }
+
+            function testFullBoundedRange() {
+                var range = db.IDBKeyRange.bound('A', 'Z');
+                var cursor = index.openCursor(range);
+
+                iterate(0, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testBoundedRange() {
+                var range = db.IDBKeyRange.bound('D', 'N');
+                var cursor = index.openCursor(range);
+
+                iterate(3, 13, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testOpenBoundedRange() {
+                var range = db.IDBKeyRange.bound('C', 'L', true, true);
+                var cursor = index.openCursor(range);
+
+                iterate(3, 10, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testLeftCloseBoundedRange() {
+                var range = db.IDBKeyRange.leftBound('T');
+                var cursor = index.openCursor(range);
+
+                iterate(19, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testLeftOpenBoundedRange() {
+                var range = db.IDBKeyRange.leftBound('J', true);
+                var cursor = index.openCursor(range);
+
+                iterate(10, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testCloseRightBoundedRange() {
+                var range = db.IDBKeyRange.rightBound('M');
+                var cursor = index.openCursor(range);
+
+                iterate(0, 12, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testRightOpenBoundedRange() {
+                var range = db.IDBKeyRange.rightBound('P', true);
+                var cursor = index.openCursor(range);
+
+                iterate(0, 14, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testForwardDuplicateIndexCursor() {
+                var expectedIndexKeys = ["Orange", "Orange", "Purple", "Red", "Red", ];
+                var expectedPrimaryKeys = ["Orange", "Tangerine", "Grape", "Apple", "Pomegranate"];
+
+                var cursor = fruitIndexByColor.openCursor();
+                alert(cursor.key);
+                for (var index = 0; index < 4; index++) {
+                    assertEquals(expectedIndexKeys[index], cursor.key);
+                    assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                    assertTrue(cursor["continue"]());
+                }
+
+                assertEquals(expectedIndexKeys[index], cursor.key);
+                assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+
+            function testForwardDuplicateIndexCursorWithNoDuplicates() {
+                var expectedIndexKeys = ["Orange", "Purple", "Red"];
+                var expectedPrimaryKeys = ["Orange", "Grape", "Apple"];
+
+                var cursor = fruitIndexByColor.openCursor(undefined, db.IDBCursor.NEXT_NO_DUPLICATE);
+
+                for (var index = 0; index < 2; index++) {
+                    assertEquals(expectedIndexKeys[index], cursor.key);
+                    assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                    assertTrue(cursor["continue"]());
+                }
+
+                assertEquals(expectedIndexKeys[index], cursor.key);
+                assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+
+            function testReverseDuplicateIndexCursorWithNoDuplicates() {
+                var expectedIndexKeys = ["Red", "Purple", "Orange"];
+                var expectedPrimaryKeys = ["Pomegranate", "Grape", "Tangerine"];
+
+                var cursor = fruitIndexByColor.openCursor(undefined, db.IDBCursor.PREV_NO_DUPLICATE);
+
+                for (var index = 0; index < 2; index++) {
+                    assertEquals(expectedIndexKeys[index], cursor.key);
+                    assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                    assertTrue(cursor["continue"]());
+                }
+
+                assertEquals(expectedIndexKeys[index], cursor.key);
+                assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+
+            function testForwardDuplicateManualIndexCursor() {
+                var isUnique = false;
+                var indexKey1 = "a" + makeRandomName();
+                var indexKey2 = "b" + makeRandomName();
+                index = objectStore.createIndex(makeRandomName(), undefined, isUnique);
+
+                index.put(indexValueLambda(15), indexKey1, false);
+                index.put(indexValueLambda(24), indexKey1, false);
+                index.put(indexValueLambda(6), indexKey1, false);
+
+                index.put(indexValueLambda(8), indexKey2, false);
+                index.put(indexValueLambda(17), indexKey2, false);
+                index.put(indexValueLambda(23), indexKey2, false);
+
+                var cursor = index.openCursor();
+
+                inform("Beginning key A checks");
+                var expectedId = 6;
+                assertEquals(indexKey1, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertTrue(cursor["continue"]());
+
+                expectedId = 15;
+                assertEquals(indexKey1, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertTrue(cursor["continue"]());
+
+                expectedId = 24;
+                assertEquals(indexKey1, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertTrue(cursor["continue"]());
+
+                inform("Beginning key B checks");
+                expectedId = 8;
+                assertEquals(indexKey2, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertTrue(cursor["continue"]());
+
+                expectedId = 17;
+                assertEquals(indexKey2, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertTrue(cursor["continue"]());
+
+                expectedId = 23;
+                assertEquals(indexKey2, cursor.key);
+                assertEquals(indexValueLambda(expectedId), cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Indexed Cursor Range Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

@@ -1,0 +1,232 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Database Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            function testOpenDatabase() {
+                var database = db.indexedDB.open(makeRandomName(), "Database unit tests");
+                assertNotNull(database);
+            }
+
+            function testOpenReadOnlyDatabase() {
+                var database = db.indexedDB.open(makeRandomName(), "Database unit tests", false);
+                var thrown = true;
+                try {
+                    database.createObjectStore(makeRandomName(), null);
+                    thrown = false;
+                }
+                catch (e) {
+                    assertExceptionContains(e, "?????");
+                }
+
+                assertTrue('The expected exception was not thrown.', thrown);
+            }
+
+            function testOpenWritableDatabase() {
+                var database = db.indexedDB.open(makeRandomName(), "Database unit tests", true);
+                database.createObjectStore(makeRandomName(), "bar");
+            }
+
+            function testDatabaseName() {
+                var name = makeRandomName();
+                var database = db.indexedDB.open(name, "Database unit tests");
+                assertEquals(name, database.name);
+            }
+
+            function testDatabaseDescription() {
+                var description = makeRandomName();
+                var database = db.indexedDB.open(makeRandomName(), description);
+                assertEquals(description, database.description);
+            }
+
+            function testDatabaseVersion() {
+                var name = makeRandomName();
+                var database = db.indexedDB.open(name, "Database unit tests");
+
+                database.setVersion('1.0');
+                assertEquals('1.0', database.version);
+            }
+
+            function testDatabaseVersionPersistence() {
+                var name = makeRandomName();
+                var database = db.indexedDB.open(name, "Database unit tests");
+                database.setVersion('1.0');
+
+                var database2 = db.indexedDB.open(name, "Database unit tests");
+                assertEquals('1.0', database2.version);
+            }
+
+            function testDatabaseVersionIsInitiallyNull() {
+                var name = makeRandomName();
+                var database = db.indexedDB.open(name, "Database unit tests");
+                assertEquals(null, database.version);
+            }
+
+            function testDatabaseVersionPersistance() {
+                var name = makeRandomName();
+                var database = db.indexedDB.open(name, "Database unit tests");
+                database.setVersion('1.0');
+
+                var database2 = db.indexedDB.open(name, "Database unit tests");
+                assertEquals('1.0', database2.version);
+            }
+
+            function testDatabaseObjectStores() {
+                var databaseName = makeRandomName();
+                var objectStore1 = makeRandomName();
+                var objectStore2 = makeRandomName();
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                database.createObjectStore(objectStore1, objectStore1);
+                database.createObjectStore(objectStore2, objectStore2);
+                assertArrayEqualsIgnoringOrder([objectStore1, objectStore2], database.objectStores);
+            }
+
+            function testDatabasePersistedObjectStores() {
+                var databaseName = makeRandomName();
+                var objectStore1 = makeRandomName();
+                var objectStore2 = makeRandomName();
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                database.createObjectStore(objectStore1, objectStore1);
+                database.createObjectStore(objectStore2, objectStore2);
+
+                var database2 = db.indexedDB.open(databaseName, "Database unit tests");
+                assertArrayEqualsIgnoringOrder(database2.objectStores, [objectStore1, objectStore2]);
+            }
+
+            function testDatabaseRemovedObjectStores() {
+                var databaseName = makeRandomName();
+                var objectStore1 = makeRandomName();
+                var objectStore2 = makeRandomName();
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                database.createObjectStore(objectStore1, objectStore1);
+                database.createObjectStore(objectStore2, objectStore2);
+                database.removeObjectStore(objectStore1);
+                assertArrayEqualsIgnoringOrder(database.objectStores, [objectStore2]);
+            }
+
+            function testDatabasePersistedRemovedObjectStores() {
+                var databaseName = makeRandomName();
+                var objectStore1 = makeRandomName();
+                var objectStore2 = makeRandomName();
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                database.createObjectStore(objectStore1, objectStore1);
+                database.createObjectStore(objectStore2, objectStore2);
+                database.removeObjectStore(objectStore1);
+
+                var database2 = db.indexedDB.open(databaseName, "Database unit tests");
+                assertArrayEqualsIgnoringOrder(database2.objectStores, [objectStore2]);
+            }
+
+            function testSingleIndexName() {
+                var databaseName = makeRandomName();
+                var objectStore1 = makeRandomName();
+                var indexName1 = makeRandomName();
+
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var objectStore = database.createObjectStore(objectStore1, null, true);
+                objectStore.createIndex(indexName1, "");
+
+                assertArrayEqualsIgnoringOrder("IndexName1 not found", [indexName1], database.indexes);
+            }
+
+
+            function testMultipleIndexNames() {
+                var databaseName = makeRandomName();
+                var objectStore1Name = makeRandomName();
+                var objectStore2Name = makeRandomName();
+                var indexName1 = makeRandomName();
+                var indexName2 = makeRandomName();
+                var indexName3 = makeRandomName();
+                var indexName4 = makeRandomName();
+
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var objectStore = database.createObjectStore(objectStore1Name, null, true);
+                var objectStore2 = database.createObjectStore(objectStore2Name, null, true);
+                objectStore.createIndex(indexName1, "");
+                objectStore.createIndex(indexName2, "");
+
+                assertArrayEqualsIgnoringOrder([indexName1, indexName2], database.indexes);
+
+                objectStore2.createIndex(indexName3, "");
+                assertArrayEqualsIgnoringOrder([indexName1, indexName2, indexName3], database.indexes);
+
+                objectStore2.createIndex(indexName4, "");
+                assertArrayEqualsIgnoringOrder([indexName1, indexName2, indexName3, indexName4], database.indexes);
+            }
+
+
+            function testRemovedIndexes() {
+                var databaseName = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var objectStore2Name = makeRandomName();
+                var indexName1 = makeRandomName();
+                var indexName2 = makeRandomName();
+                var indexName3 = makeRandomName();
+
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var objectStore = database.createObjectStore(objectStoreName, null, true);
+                var objectStore2 = database.createObjectStore(objectStore2Name, null, true);
+                objectStore.createIndex(indexName1, "");
+                objectStore.createIndex(indexName2, "");
+                objectStore2.createIndex(indexName3, "");
+
+                objectStore.removeIndex(indexName1);
+                assertArrayEqualsIgnoringOrder(database.indexes, [indexName2, indexName3]);
+            }
+
+            function testDuplicateObjectStores() {
+                var databaseName = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var thrown = true;
+
+                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var objectStore = database.createObjectStore(objectStoreName, null, true);
+
+                try {
+                    database.createObjectStore(objectStoreName, null);
+                    thrown = false;
+                }
+                catch (e) {
+                    assertExceptionContains(e, "CONSTRAINT_ERR");
+                }
+
+                assertTrue('The expected exception was not thrown.', thrown);
+            }
+
+            function testDatabaseTransaction() {
+                var database = db.indexedDB.open(makeRandomName(), "Database unit tests");
+                var transaction = database.transaction();
+                assertNotNull(transaction);
+            }
+
+            function testOrphanedDatabaseWithObjectStoreReference() {
+                var orphanObjectStore = function() {
+                    return db.indexedDB.open(makeRandomName(), "Database unit tests").createObjectStore(makeRandomName(), null, true);
+                }
+
+                // Object stores maintain a reference to their database, 
+                // so the connection shouldn't yet be collected
+                assertClosureDoesNotThrow(function() {
+                    orphanObjectStore().put("value", "key");
+                });
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Database Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

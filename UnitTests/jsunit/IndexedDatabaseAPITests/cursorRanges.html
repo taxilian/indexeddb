@@ -1,0 +1,150 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Cursor Range Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "cursor range unit tests");
+
+                objectStore = connection.createObjectStore(makeRandomName(), null, true);
+                putValues(objectStore, 100);
+            }
+
+            function tearDown() {
+                connection.removeObjectStore(objectStore.name);
+                objectStore = undefined;
+            }
+
+            function testFullRange() {
+                var cursor = objectStore.openCursor();
+                iterate(0, 99, cursor);
+            }
+
+            function testFullBoundedRange() {
+                var range = db.IDBKeyRange.bound(0, 99);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(0, 99, cursor);
+            }
+
+            function testBoundedRange() {
+                var range = db.IDBKeyRange.bound(33, 44);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(33, 44, cursor);
+            }
+
+            function testOpenBoundedRange() {
+                var range = db.IDBKeyRange.bound(30, 44, true, true);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(31, 43, cursor);
+            }
+
+            function testLeftCloseBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(30);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(30, 99, cursor);
+            }
+
+            function testLeftOpenBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(94, true);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(95, 99, cursor);
+            }
+
+            function testCloseRightBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(22);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(0, 22, cursor);
+            }
+
+            function testRightOpenBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(22, true);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(0, 21, cursor);
+            }
+
+            function testLeftEdgeRange() {
+                var range = db.IDBKeyRange.rightBound(0);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(0, 0, cursor);
+            }
+
+            function testLeftEdgeBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(0);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(0, 0, cursor);
+            }
+
+            function testLeftEdgeOpenBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(0, true);
+                var thrown = true;
+                try {
+                    var cursor = objectStore.openCursor(range);
+                    thrown = false;
+                }
+                catch (e) {
+                    assertExceptionContains(e, "NOT_FOUND_ERR");
+                }
+
+                assertTrue("cursor.openCursor did not throw as expected.", thrown);
+            }
+
+            function testRightEdgeRange() {
+                var range = db.IDBKeyRange.leftBound(99);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(99, 99, cursor);
+            }
+
+            function testRightEdgeBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(99);
+                var cursor = objectStore.openCursor(range);
+
+                iterate(99, 99, cursor);
+            }
+
+            function testRightEdgeOpenBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(99, true);
+                var thrown = true;
+
+                try {
+                    var cursor = objectStore.openCursor(range);
+                    thrown = false;
+                }
+                catch (e) {
+                    assertExceptionContains(e, "NOT_FOUND_ERR");
+                }
+
+                assertTrue("cursor.openCursor did not throw as expected.", thrown);
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Cursor Range Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

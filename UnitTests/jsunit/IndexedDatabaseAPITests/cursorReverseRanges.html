@@ -1,0 +1,89 @@
+<html>
+    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Cursor Range Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "cursor range unit tests");
+                objectStore = connection.createObjectStore(makeRandomName(), null, true);
+                putValues(objectStore, 100);
+            }
+
+            function tearDown() {
+                connection.removeObjectStore(objectStore.name);
+                objectStore = undefined;
+            }
+
+            function testReverseFullBoundedRange() {
+                var range = db.IDBKeyRange.bound(0, 99);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(99, 0, cursor, -1);
+            }
+
+            function testReverseBoundedRange() {
+                var range = db.IDBKeyRange.bound(33, 44);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(44, 33, cursor, -1);
+            }
+
+            function testReverseOpenBoundedRange() {
+                var range = db.IDBKeyRange.bound(30, 44, true, true);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(43, 31, cursor, -1);
+            }
+
+            function testReverseLeftCloseBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(30);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(99, 30, cursor, -1);
+            }
+
+            function testReverseLeftOpenBoundedRange() {
+                var range = db.IDBKeyRange.leftBound(94, true);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(99, 95, cursor, -1);
+            }
+
+            function testReverseCloseRightBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(22);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(22, 0, cursor, -1);
+            }
+
+            function testReverseRightOpenBoundedRange() {
+                var range = db.IDBKeyRange.rightBound(22, true);
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+
+                iterate(21, 0, cursor, -1);
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Cursor Reverse Range Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+
+</html>

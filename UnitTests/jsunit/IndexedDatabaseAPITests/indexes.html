@@ -1,0 +1,413 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Index Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var READ_WRITE = 0;
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                objectStore = connection.createObjectStore(makeRandomName(), null, true);
+            }
+
+            function tearDown() {
+                objectStore = undefined;
+            }
+
+            function testCreateIndex() {
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "", true);
+            }
+
+            function testRemoveIndex() {
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "", true);
+                objectStore.removeIndex(indexName);
+            }
+
+            function testOpenIndex() {
+                var objectStoreName = objectStore.name;
+                var indexName = makeRandomName();
+                var key = makeRandomName();
+                var primary = makeRandomName();
+                var secondary = makeRandomName();
+                var data = {
+                    primary: primary,
+                    secondary: secondary
+                };
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, "secondary", true);
+
+                assertEquals(key, index.get(secondary));
+                assertObjectEquals(data, index.getObject(secondary));
+                index = undefined;
+                objectStore = undefined;
+
+                objectStore = connection.openObjectStore(objectStoreName);
+                index = objectStore.openIndex(indexName);
+
+                assertEquals(key, index.get(secondary));
+                assertObjectEquals(data, index.getObject(secondary));
+
+                var key2 = makeRandomName();
+                var primary2 = makeRandomName();
+                var secondary2 = makeRandomName();
+                var data2 = {
+                    primary: primary2,
+                    secondary: secondary2
+                };
+
+                objectStore.put(data2, key2);
+
+                assertEquals(key2, index.get(secondary2));
+                assertObjectEquals(data2, index.getObject(secondary2));
+            }
+
+            function testOpenManualIndex() {
+                var objectStoreName = objectStore.name;
+                var indexName = makeRandomName();
+                var key = makeRandomName();
+                var indexKey = makeRandomName();
+                var data = makeRandomName();
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName);
+
+                index.put(key, indexKey);
+
+                inform("Begin assertions that validate the index prior to opening.");
+                assertEquals(key, index.get(indexKey));
+                assertObjectEquals(data, index.getObject(indexKey));
+
+                index = undefined;
+                objectStore = undefined;
+
+                objectStore = connection.openObjectStore(objectStoreName);
+                index = objectStore.openIndex(indexName);
+
+                inform("Begin assertions that validate an existing key is present after reopening.");
+                assertEquals(key, index.get(indexKey));
+                assertObjectEquals(data, index.getObject(indexKey));
+
+                var key2 = makeRandomName();
+                var indexKey2 = makeRandomName();
+                var data2 = makeRandomName();
+
+                inform("Adding new pair to index.");
+                objectStore.put(data2, key2);
+                index.put(key2, indexKey2);
+
+                inform("Validating that pair added to opened index persists.");
+                assertEquals(key2, index.get(indexKey2));
+                assertObjectEquals(data2, index.getObject(indexKey2));
+            }
+
+            function testIndexGetObject() {
+                var value = {
+                    key: "value",
+                    key2: "value2"
+                };
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "key2", true);
+
+                objectStore.put(value, "key");
+
+                assertObjectEquals(objectStore.get("key"), index.getObject("value2"));
+            }
+
+            function testIndexGet() {
+                var value = {
+                    key: "value",
+                    key2: "value2"
+                };
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "key2", true);
+
+                objectStore.put(value, "key");
+
+                assertObjectEquals("key", index.get("value2"));
+            }
+
+            function testIndexObjectStoreRemove() {
+                var value = {
+                    key: "value",
+                    key2: "value2"
+                };
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "key2", true);
+
+                objectStore.put(value, "key");
+                objectStore.remove("key");
+            }
+
+            function testIndexRemove() {
+                var value = {
+                    key: "value",
+                    key2: "value2"
+                };
+                var indexName = makeRandomName();
+                var index = objectStore.createIndex(indexName, "key2", true);
+
+                objectStore.put(value, "key");
+                index.remove("value2");
+
+                assertClosureThrows(function() {
+                    index.get("value2")
+                }, "NOT_FOUND_ERR");
+                assertClosureThrows(function() {
+                    objectStore.get("key")
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testMultipleObjectStoreConnectionsWithIndex() {
+                var key = makeRandomName();
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    primary: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, "secondary", true);
+
+                objectStore2 = connection.openObjectStore(objectStore.name, READ_WRITE);
+
+                assertNotNull(objectStore2.get(key));
+                assertObjectEquals(objectStore2.get(key), index.getObject(secondaryId));
+
+                objectStore2.remove(key);
+            }
+
+            function testIndexPut() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                assertEquals(secondaryId, index.put(id, secondaryId));
+
+                assertEquals(id, index.get(secondaryId));
+                assertObjectEquals(data, index.getObject(secondaryId));
+            }
+
+            function testIndexPutDuplicates() {
+                var id = makeRandomName();
+                var id2 = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var data2 = {
+                    primary: id2,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id, false);
+                objectStore.put(data2, id2, false);
+
+                var index = objectStore.createIndex(indexName);
+                assertEquals(secondaryId, index.put(id, secondaryId, false));
+                assertEquals(secondaryId, index.put(id2, secondaryId, false));
+
+                // The index.get call will return exactly one of id, id2, but the exact one is undefined
+                assertContains(index.get(secondaryId), [id, id2]);
+            }
+
+            function testIndexPutConstraintViolation() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(id, secondaryId);
+
+                assertClosureThrows(function() {
+                    index.put(makeRandomName(), secondaryId);
+                }, "CONSTRAINT_ERR");
+            }
+
+            function testUniqueIndexPutDuplicate() {
+                var id = makeRandomName();
+                var id2 = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var data2 = {
+                    primary: id2,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName, undefined, true);
+                index.put(id, secondaryId);
+
+                assertClosureThrows(function() {
+                    index.put(id2, secondaryId);
+                }, "CONSTRAINT_ERR");
+            }
+
+            function testManualIndexPutReturnsKey() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                assertEquals(secondaryId, index.put(id, secondaryId));
+            }
+
+            function testManualIndexRemove() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(id, secondaryId);
+
+                index.remove(secondaryId);
+
+                assertClosureThrows(function() {
+                    index.get(secondaryId);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testIndexPrimaryRemove() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(id, secondaryId);
+
+                objectStore.remove(id);
+
+                assertClosureThrows(function() {
+                    index.get(secondaryId);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testIndexPrimaryRemove2() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(id, secondaryId);
+
+                objectStore.remove(id);
+
+                assertClosureThrows(function() {
+                    index.getObject(secondaryId);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testIndexPutWithKeyPath() {
+                var key = makeRandomName();
+                var data = {
+                    primary: makeRandomName(),
+                    secondary: makeRandomName()
+                };
+                var data2 = {
+                    primary: makeRandomName(),
+                    secondary: makeRandomName()
+                };
+                var indexName = makeRandomName();
+                var keyPath = "secondary";
+
+                objectStore.put(data, key);
+
+                var index = objectStore.createIndex(indexName, keyPath, true);
+                assertClosureThrows(function() {
+                    index.put(data2);
+                }, "CONSTRAINT_ERR");
+            }
+
+            function testIndex_RemoveTransactionally() {
+                var id = makeRandomName();
+                var secondaryId = makeRandomName();
+                var data = {
+                    id: id,
+                    secondary: secondaryId
+                };
+                var indexName = makeRandomName();
+
+                objectStore.put(data, id);
+
+                var index = objectStore.createIndex(indexName);
+                index.put(id, secondaryId);
+
+                var transaction = connection.transaction();
+
+                objectStore.removeIndex(indexName);
+
+                transaction.commit();
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Index Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

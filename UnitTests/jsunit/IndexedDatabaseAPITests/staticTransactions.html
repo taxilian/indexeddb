@@ -1,0 +1,197 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Static Transaction Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            function setUp() {
+                database = db.indexedDB.open(makeRandomName(), "Transaction unit tests");
+            }
+
+            function tearDown() {
+                database = undefined;
+            }
+
+            function testDatabaseWithoutTransaction() {
+                assertNull(database.currentTransaction);
+            }
+
+            function testNewFullStaticTransaction() {
+                var transaction = database.transaction();
+                assertNotNull(transaction);
+                assertTrue(transaction.static);
+                assertEquals(transaction.db.name, database.name);
+                assertEquals(transaction.db.name, database.currentTransaction.db.name);
+            }
+
+            function testNamedStaticTransaction() {
+                var objectStoreName1 = makeRandomName();
+                var objectStoreName2 = makeRandomName();
+                database.createObjectStore(objectStoreName1, null);
+                database.createObjectStore(objectStoreName2, null);
+
+                var transaction = database.transaction([objectStoreName1, objectStoreName2]);
+                assertNotNull(transaction);
+                assertTrue(transaction.static);
+                assertEquals(transaction.db.name, database.name);
+            }
+
+            function testNamedStaticTransactionWithMismatchedObjectStoreName() {
+                database.createObjectStore(makeRandomName(), null);
+                assertClosureThrows(function() {
+                    database.transaction([makeRandomName(), makeRandomName()]);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testNamedStaticTransactionWithInvalidObjectStoreNameAndTimeout() {
+                database.createObjectStore(makeRandomName(), null);
+                assertClosureThrows(function() {
+                    database.transaction([makeRandomName(), makeRandomName()], 500);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testNamedStaticTransactionWithInvalidTypes() {
+                var objectStoreName1 = makeRandomName();
+                database.createObjectStore(objectStoreName1, null);
+
+                assertClosureThrows(function() {
+                    database.transaction([5], 500);
+                }, "NOT_FOUND_ERR");
+                assertClosureThrows(function() {
+                    database.transaction([5.5], 500);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testNamedStaticTransactionWithNullValues() {
+                var objectStoreName1 = makeRandomName();
+                database.createObjectStore(objectStoreName1, null);
+
+                assertClosureThrows(function() {
+                    database.transaction([null], 500);
+                }, INVALID_ARGUMENTS);
+            }
+
+            function testNamedStaticTransactionWithTimeout() {
+                var objectStoreName1 = makeRandomName();
+                database.createObjectStore(objectStoreName1, null);
+                var transaction = database.transaction([objectStoreName1], 500);
+                assertNotNull(transaction);
+                assertTrue(transaction.static);
+                assertEquals(transaction.db.name, database.name);
+            }
+
+            function testSingleNameStaticTransaction() {
+                var objectStoreName1 = makeRandomName();
+                database.createObjectStore(objectStoreName1, null);
+                var transaction = database.transaction(objectStoreName1);
+                assertNotNull(transaction);
+                assertTrue(transaction.static);
+                assertEquals(transaction.db.name, database.name);
+            }
+
+            function testSimpleTransactionalPutCommit() {
+                var key = makeRandomName();
+                var value = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var objectStore = database.createObjectStore(objectStoreName, null);
+                var transaction = database.transaction(objectStoreName);
+                objectStore.put(value, key);
+
+                assertEquals(value, objectStore.get(key));
+
+                transaction.commit();
+
+                assertEquals(value, objectStore.get(key));
+            }
+
+            function testSimpleTransactionalPutAbort() {
+                var key = makeRandomName();
+                var value = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var objectStore = database.createObjectStore(objectStoreName, null);
+                var transaction = database.transaction(objectStoreName);
+                objectStore.put(value, key);
+
+                assertEquals(value, objectStore.get(key));
+
+                transaction.abort();
+
+                assertClosureThrows(function() {
+                    objectStore.get(key)
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testSimpleTransactionalDeleteCommit() {
+                var key = makeRandomName();
+                var value = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var objectStore = database.createObjectStore(objectStoreName, null);
+
+                objectStore.put(value, key);
+                assertEquals(value, objectStore.get(key));
+
+                var transaction = database.transaction(objectStoreName);
+                objectStore.remove(key);
+                transaction.commit();
+
+                assertClosureThrows(function() {
+                    objectStore.get(key)
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testSimpleTransactionalDeleteAbort() {
+                var key = makeRandomName();
+                var value = makeRandomName();
+                var objectStoreName = makeRandomName();
+                var objectStore = database.createObjectStore(objectStoreName, null);
+
+                objectStore.put(value, key);
+                assertEquals(value, objectStore.get(key));
+
+                var transaction = database.transaction(objectStoreName);
+                objectStore.remove(key);
+                transaction.abort();
+
+                assertEquals(value, objectStore.get(key));
+            }
+
+            function testTransactionCollection() {
+                var transaction = database.transaction();
+                transaction = undefined;
+                database = undefined;
+            }
+
+            function testTransaction_DoubleCommit() {
+                var transaction = database.transaction();
+
+                transaction.commit();
+                assertClosureThrows(function() { transaction.commit() }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() { transaction.abort() }, "NON_TRANSIENT_ERR");
+            }
+
+            function testTransaction_DoubleAbort() {
+                var transaction = database.transaction();
+
+                transaction.abort();
+                assertClosureThrows(function() { transaction.abort() }, "NON_TRANSIENT_ERR");
+                assertClosureThrows(function() { transaction.commit() }, "NON_TRANSIENT_ERR");
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Static Transaction Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

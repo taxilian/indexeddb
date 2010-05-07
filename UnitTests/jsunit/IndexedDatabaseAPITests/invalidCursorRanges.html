@@ -1,0 +1,175 @@
+<html>
+    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Invalid Cursor Range Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "cursor range unit tests");
+                objectStore = connection.createObjectStore(makeRandomName(), null);
+                putValues(objectStore, 100);
+            }
+
+            function tearDown() {
+                connection.removeObjectStore(objectStore.name);
+                objectStore = undefined;
+            }
+
+            function testEmptyRange() {
+                var range = db.IDBKeyRange.bound('A', 'D');
+
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyNullRange() {
+                var range = db.IDBKeyRange.bound('D', 'D');
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyOpenRange() {
+                var range = db.IDBKeyRange.bound('A', 'D', true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyReverseRange() {
+                var range = db.IDBKeyRange.bound('D', 'A');
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyNullReverseRange() {
+                var range = db.IDBKeyRange.bound('S', 'S');
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyOpenReverseRange() {
+                var range = db.IDBKeyRange.bound('D', 'A', true, true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testNullRange() {
+                var range = db.IDBKeyRange.bound(3, 3);
+
+                var cursor = objectStore.openCursor(range);
+                assertEquals(3, cursor.key);
+                assertEquals('3value', cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+
+            function testNullOpenRange() {
+                var range = db.IDBKeyRange.bound(22, 22, true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testNullReverseRange() {
+                var range = db.IDBKeyRange.bound(42, 42);
+
+                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+                assertEquals(42, cursor.key);
+                assertEquals('42value', cursor.value);
+                assertFalse(cursor["continue"]());
+            }
+
+            function testNullOpenReverseRange() {
+                var range = db.IDBKeyRange.bound(63, 63, true, true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testInvalidRange() {
+                var range = db.IDBKeyRange.bound(7, 3);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testInvalidOpenRange() {
+                var range = db.IDBKeyRange.bound(7, 3, true, true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testInvalidReverseRange() {
+                var range = db.IDBKeyRange.bound(7, 3);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testInvalidReverseOpenRange() {
+                var range = db.IDBKeyRange.bound(5, 2, true, true);
+                assertClosureThrows(function() {
+                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyCursor() {
+                var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
+
+                assertClosureThrows(function() {
+                    objectStore.openCursor()
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyBoundedCursor() {
+                var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
+
+                assertClosureThrows(function() {
+                    objectStore.openCursor(db.IDBKeyRange.bound(5, 10))
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyReverseCursor() {
+                var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
+
+                assertClosureThrows(function() {
+                    objectStore.openCursor(db.IDBKeyRange, db.IDBCursor.PREV)
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testEmptyReverseBoundedCursor() {
+                var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
+
+                assertClosureThrows(function() {
+                    objectStore.openCursor(db.IDBKeyRange.bound(5, 10), db.IDBCursor.PREV)
+                }, "NOT_FOUND_ERR");
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Invalid Cursor Range Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+
+</html>

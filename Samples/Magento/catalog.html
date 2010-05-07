@@ -1,0 +1,328 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta name="generator" content=
+  "HTML Tidy for Linux/x86 (vers 11 February 2007), see www.w3.org" />
+  <!-- Begin IndexedDB Test Code -->
+
+  <script type="text/javascript" src="json2.js"></script>
+  <script type="text/javascript" src=
+  "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js">
+</script>
+  <script type="text/javascript" src=
+  "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js">
+</script>
+  <link rel="stylesheet" href=
+  "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/themes/start/jquery-ui.css" type=
+  "text/css" /><object id="db" type="application/x-indexeddatabase" width="1" height="1">
+    </object>
+  <script type="text/javascript" src="catalog.js">
+</script><!-- End IndexedDB Test Code -->
+
+  <title>Shirts - Apparel - Magento Commerce Demo Store</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
+  <meta name="description" content="Default Description" />
+  <meta name="keywords" content="Magento, Varien, E-commerce" />
+  <meta name="robots" content="INDEX,FOLLOW" />
+  <link rel="icon" href="skin/frontend/default/default/favicon.ico" type=
+  "image/x-icon" />
+  <link rel="shortcut icon" href="skin/frontend/default/default/favicon.ico" type=
+  "image/x-icon" />
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/base/default/css/widgets.css" media="all" />
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/default/default/css/styles.css" media="all" />
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/default/default/css/print.css" media="print" /><!--[if lt IE 8]>
+<link rel="stylesheet" type="text/css" href="skin/frontend/default/default/css/styles-ie.css" media="all" />
+<![endif]-->
+</head>
+
+<body class=" catalog-category-view categorypath-apparel-shirts category-shirts">
+  <!-- Begin IndexedDB Dialog -->
+
+  <div id="dialog" title="About this Demonstration" style=
+  "text-align: justify; display: none;">
+    <h2>Indexed Database API Demonstration</h2>
+
+    <p>This page demonstrates the utility of the Indexed Database API as a client-based
+    data store. Here, any of the items listed below may be added to the shopping cart
+    (via the Add to Cart links); these items are persisted entirely on the client and
+    reconstructed on the shopping cart page. Note that this demonstration contains no
+    server-side logic.</p>
+
+    <p>Note that most of the functionality on this page (e.g. filters, searching) have
+    been deliberately disabled. This is designed to be a (very) simple demonstration of
+    the Indexed Database API and not a full e-commerce simulation. The relevent code
+    associated with these pages are located in the <a href="catalog.js">catalog.js</a>
+    and <a href="cart.js">cart.js</a> files.</p>
+
+    <p>This page (along with the shopping cart page) is derived from the <a href=
+    "http://www.magentocommerce.com/">Magento Community E-Commerce platform</a>, which is
+    available under an <a href="http://www.opensource.org/licenses/osl-3.0.php">OSL
+    3.0</a> license. As such, this entire demonsration is <a href=
+    "http://code.google.com/p/indexeddb/downloads/list">available under the same</a>.</p>
+
+    <p>Visit the <a href="http://code.google.com/p/indexeddb/">project homepage</a> to
+    learn more about the Indexed Database API!</p>
+  </div>
+
+  <div id="errorDialog" title="An error has occurred!" style=
+  "text-align: justify; display: none;">
+    <h2>An unexpected error has occurred.</h2>
+
+    <p>Unfortunately, an error has occured <span id="errorText"></span>. The most likely
+    cause for this error is an incorrectly installed Indexed Database plugin. Please
+    visit the <a href="http://code.google.com/p/indexeddb/">project homepage</a> and
+    re-execute the installer.</p>
+
+    <p>
+        Note that if you have just installed the plugin, you may need to restart your browser.
+        Also, Internet Explorer requires that the site "people.fas.harvard.edu" be allowed to execute
+        ActiveX controls.  To do so, add the domain to your list of trusted sites.
+    </p>
+
+    <p>Exception text: <span id="exceptionText"></span></p>
+  </div><!-- End IndexedDB Dialog -->
+
+  <div class="wrapper">
+    <noscript>
+    <div class="noscript">
+      <div class="noscript-inner">
+        <p><strong>We detected that your JavaScript seem to be disabled.</strong></p>
+
+        <p>You must have JavaScript enabled in your browser to utilize the functionality
+        of this website.</p>
+      </div>
+    </div></noscript>
+
+    <p class="demo-notice">This is a demonstration of the Indexed Database API working
+    draft based upon the Magento e-commerce platform.<br />
+    The original content is copyright Magento and (along with the demonstrative changes) licensed under the OSL 3.0.</p>
+
+    <div class="page">
+      <div class="header-container">
+        <div class="header">
+          <div class="quick-access">
+            <form id="search_mini_form" action="#" method="get"></form>
+
+            <p class="welcome-msg">Welcome to the Indexed Database API demonstration!</p>
+
+            <ul class="links">
+              <li><a href="cart.html" title="My Cart" class="top-link-cart">My
+              Cart</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-container">
+        <ul id="nav">
+          <li class="level0 nav-1 parent">
+            <a href="#"><span>Furniture</span></a>
+          </li>
+
+          <li class="level0 nav-2 parent">
+            <a href="#"><span>Electronics</span></a>
+          </li>
+
+          <li class="level0 nav-3 active parent">
+            <a href="#"><span>Apparel</span></a>
+          </li>
+
+          <li class="level0 nav-4">
+            <a href="#"><span>Music</span></a></li>
+
+          <li class="level0 nav-5">
+            <a href="#"><span>Ebooks</span></a></li>
+        </ul>
+      </div>
+
+      <div class="main-container col3-layout">
+        <div class="main">
+          <div class="breadcrumbs">
+            <ul>
+              <li class="home">Home <span>/</span></li>
+
+              <li class="category18">Apparel <span>/</span></li>
+
+              <li class="category4"><strong>Shirts</strong></li>
+            </ul>
+          </div>
+
+          <div class="col-wrapper">
+            <div class="col-main">
+              <div class="page-title category-title">
+                <h1>Shirts</h1>
+              </div>
+
+              <div class="category-products">
+                <ul class="products-grid">
+                  <li class="item first" style="padding-bottom: 2em;">
+                    <img src="products/green.jpg"
+                    width="135" height="135" alt=
+                    "Coalesce: Functioning On Impatience T-Shirt" />
+
+                    <h2 class="product-name">Coalesce: Functioning
+                    On Impatience T-Shirt</h2>
+
+                    <div class="price-box">
+                      <span class="regular-price" id="product-price-119"><span class=
+                      "price">$15.00</span></span>
+                    </div>
+
+                    <div>
+                      <button type="button" title="Add to Cart" class="button btn-cart"
+                      onclick=
+                      "addToCart('Coalesce: Functioning On Impatience T-Shirt', 15.0, 'Green', 'products/green.jpg');">
+                      <span><span>Add to Cart</span></span></button>
+                    </div>
+                  </li>
+
+                  <li class="item" style="padding-bottom: 2em;">
+                    <img src="products/redcircle.jpg"
+                    width="135" height="135" alt=
+                    "Ink Eater: Krylon Bombear Destroyed Tee" />
+
+                    <h2 class="product-name">Ink Eater: Krylon Bombear
+                    Destroyed Tee</h2>
+
+                    <div class="price-box">
+                      <span class="regular-price" id="product-price-120"><span class=
+                      "price">$22.00</span></span>
+                    </div>
+
+                    <div>
+                      <button type="button" title="Add to Cart" class="button btn-cart"
+                      onclick=
+                      "addToCart('Ink Eater: Krylon Bombear Destroyed Tee', 22, 'White', 'products/redcircle.jpg')">
+                      <span><span>Add to Cart</span></span></button>
+                    </div>
+                  </li>
+
+                  <li class="item last" style="padding-bottom: 2em;">
+                    <img src="products/crazy.jpg"
+                    width="135" height="135" alt="The Only Children: Paisley T-Shirt" />
+
+                    <h2 class="product-name">The Only Children: Paisley
+                    T-Shirt</h2>
+
+                    <div class="price-box" style="padding-top: 1.5em;">
+                      <span class="regular-price" id="product-price-123"><span class=
+                      "price">$100.00</span></span>
+                    </div>
+
+                    <div>
+                      <button type="button" title="Add to Cart" class="button btn-cart"
+                      onclick=
+                      "addToCart('The Only Children: Paisley T-Shirt', '100', 'White', 'products/crazy.jpg')">
+                      <span><span>Add to Cart</span></span></button>
+                    </div>
+                  </li>
+                </ul>
+
+                <ul class="products-grid">
+                  <li class="item first" style="padding-bottom: 2em;">
+                    <img src="products/red.jpg"
+                    width="135" height="135" alt=
+                    "Zolof The Rock And Roll Destroyer: LOL Cat T-shirt" />
+
+                    <h2 class="product-name">Zolof The Rock
+                    And Roll Destroyer: LOL Cat T-shirt</h2>
+
+                    <div class="price-box">
+                      <span class="regular-price" id="product-price-126"><span class=
+                      "price">$13.00</span></span>
+                    </div>
+
+                    <div>
+                      <button type="button" title="Add to Cart" class="button btn-cart"
+                      onclick=
+                      "addToCart('Zolof The Rock And Roll Destroyer: LOL Cat T-shirt', 13, 'Red', 'products/red.jpg')">
+                      <span><span>Add to Cart</span></span></button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="col-left sidebar">
+              <div class="block block-banner">
+                <div class="block-content"><img src=
+                "skin/frontend/default/default/images/media/col_left_callout.jpg" alt=
+                "Our customer service is available 24/7. Call us at (555) 555-0123." /></div>
+              </div>
+
+              <div class="block block-subscribe">
+                <div class="block-title">
+                  <strong><span>Newsletter</span></strong>
+                </div>
+
+                <div class="block-content">
+                  <label for="newsletter">Sign up for our newsletter:</label>
+
+                  <div class="input-box">
+                    <input disabled="disabled" type="text" name="email" id="newsletter"
+                    title="Sign up for our newsletter" class=
+                    "input-text required-entry validate-email" />
+                  </div>
+
+                  <div class="actions">
+                    <button disabled="disabled" type="submit" title="Subscribe" class=
+                    "button"><span><span>Subscribe</span></span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-right sidebar">
+            <div class="block block-compare">
+              <div class="block-title">
+                <strong><span>Compare Products</span></strong>
+              </div>
+
+              <div class="block-content">
+                <p class="empty">You have no items to compare.</p>
+              </div>
+            </div>
+
+            <div class="block block-banner">
+              <div class="block-content"><img src=
+              "skin/frontend/default/default/images/media/col_right_callout.jpg" title=
+              "Keep your eyes open for our special Back to School items and save A LOT!"
+              alt=
+              "Keep your eyes open for our special Back to School items and save A LOT!" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-container">
+        <div class="footer">
+          <ul>
+            <li>About
+            Us</li>
+
+            <li class="last">Customer Service</li>
+          </ul>
+
+          <ul class="links">
+            <li class="first">Site Map</li>
+
+            <li>Search Terms</li>
+
+            <li>Advanced Search</li>
+
+            <li>Contact Us</li>
+
+            <li class=" last">RSS</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

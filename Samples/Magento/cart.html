@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Shopping Cart - Magento Commerce Demo Store</title>
+
+  <script type="text/javascript" src="json2.js"></script>
+  <script type="text/javascript" src=
+  "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js">
+</script>
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/base/default/css/widgets.css" media="all" />
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/default/default/css/styles.css" media="all" />
+  <link rel="stylesheet" type="text/css" href=
+  "skin/frontend/default/default/css/print.css" media="print" />
+</head>
+
+<body>
+  <div id="errorDialog" title="An error has occurred!" style=
+  "text-align: justify; display: none;">
+    <h2>An unexpected error has occurred.</h2>
+
+    <p>Unfortunately, an error has occured <span id="errorText"></span>. The most likely
+    cause for this error is an incorrectly installed Indexed Database plugin. Please
+    visit the <a href="http://code.google.com/p/indexeddb/">project homepage</a> and
+    re-execute the installer.</p>
+
+    <p>
+        Note that if you have just installed the plugin, you may need to restart your browser.
+        Also, Internet Explorer requires that the site "people.fas.harvard.edu" be allowed to execute
+        ActiveX controls.  To do so, add the domain to your list of trusted sites.
+    </p>
+
+    <p>Exception text: <span id="exceptionText"></span></p>
+  </div>
+  
+  <div class="wrapper">
+    <p class="demo-notice">This is a demonstration of the Indexed Database API working
+    draft based upon the Magento e-commerce platform.<br />
+    The original content is copyright Magento and (along with the demonstrative changes) licensed under the OSL 3.0.</p>
+
+    <div class="page">
+      <div class="header-container">
+        <div class="header">
+          <div class="quick-access">
+            <p class="welcome-msg">Welcome to the Indexed Database API demonstration!</p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-container">
+        <ul id="nav">
+          <li class=
+          "level0 nav-1 parent">
+            <a href="#"><span>Furniture</span></a>
+          </li>
+
+          <li  class=
+          "level0 nav-2 parent">
+            <a href="#"><span>Electronics</span></a>
+          </li>
+
+          <li  class=
+          "level0 nav-3 parent">
+            <a href="catalog.html" ><span>Apparel</span></a>
+          </li>
+
+          <li class="level0 nav-4"><a href="#"><span>Music</span></a></li>
+
+          <li class="level0 nav-5"><a href="#"><span>Ebooks</span></a></li>
+        </ul>
+      </div>
+
+      <div class="main-container col1-layout">
+        <div class="main">
+          <div class="col-main">
+            <div class="cart">
+              <div class="page-title title-buttons">
+                <h1>Shopping Cart</h1>
+              </div>
+
+                <fieldset>
+                  <table id="shopping-cart-table" class="data-table cart-table">
+                    <col width="1" />
+                    <col width="1" />
+                    <col />
+                    <col width="1" />
+                    <col width="1" />
+                    <col width="1" />
+
+                    <thead>
+                      <tr class="first last">
+                        <th rowspan="1" class="a-center">&nbsp;</th>
+
+                        <th rowspan="1">&nbsp;</th>
+
+                        <th rowspan="1"><span class="nobr">Product Name</span></th>
+
+                        <th class="a-center" colspan="1"><span class="nobr">Unit
+                        Price</span></th>
+
+                        <th rowspan="1" class="a-center">Qty</th>
+
+                        <th class="a-center" colspan="1">Subtotal</th>
+                      </tr>
+                    </thead>
+
+                    <tfoot>
+                      <tr class="first last">
+                        <td colspan="50" class="a-right last"><button type="button"
+                        title="Continue Shopping" class="button btn-continue" 
+                        onclick="window.location.href = 'catalog.html';"><span><span>Continue
+                        Shopping</span></span></button></td>
+                      </tr>
+                    </tfoot>
+
+                    <tbody>
+                      <tr id="CloneRow" style="display: none" class="first last odd">
+                        <td class="a-center"><a href="#" title="Remove item" class=
+                        "btn-remove2">Remove item</a></td>
+
+                        <td><img class=
+                        "product" src="products/unknown.gif" width="75" height="75" alt=
+                        "Product" /></td>
+
+                        <td>
+                          <h2 class="product-name">Product Name</h2>
+                        </td>
+
+                        <td class="a-right"><span class="cart-price"><span class=
+                        "price">$0.00</span></span></td>
+
+                        <td class="a-center"><input name="cart[335260][qty]" value="1"
+                        size="4" title="Qty" class="input-text qty" maxlength=
+                        "12" disabled="disabled" /></td>
+
+                        <td class="a-right last"><span class="cart-price"><span class=
+                        "price">$0.00</span></span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </fieldset>
+
+              <div class="cart-collaterals" style="text-align: right">
+                    <button type="button" title=
+                    "Proceed to Checkout" class="button btn-checkout" onclick=
+                    "alert('Not implemented!');">
+                    <span><span>Proceed to Checkout</span></span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-container">
+        <div class="footer">
+           <ul>
+            <li>About Us</li>
+
+            <li class="last">Customer
+            Service</li>
+          </ul>
+
+          <ul class="links">
+            <li class="first">Site Map</li>
+
+            <li>Search Terms</li>
+
+            <li>Advanced Search</li>
+
+            <li>Contact Us</li>
+
+            <li class=" last">RSS</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+  <!-- Begin IndexedDB Test Code -->
+  <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+    </object> <script type="text/javascript" src="cart.js">
+</script><!-- End IndexedDB Test Code -->
+</body>
+</html>

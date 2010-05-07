@@ -1,0 +1,75 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Deadlock Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var manualIndex;
+            var index;
+            var READ_WRITE = 0;
+            var objectStoreName = makeRandomName();
+            var primaryKey = 'a' + makeRandomName();
+            var secondaryKey = 'a' + makeRandomName();
+            var value = {
+                primary: primaryKey,
+                secondary: secondaryKey
+            };
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                objectStore = connection.createObjectStore(objectStoreName, null, true);
+                index = objectStore.createIndex(makeRandomName(), "secondary", true);
+
+                objectStore.put(value, primaryKey);
+            }
+
+            function tearDown() {
+                objectStore = undefined;
+            }
+
+            function testDeadlock_RemoveCurrentCursorValue() {
+                var cursor = index.openCursor();
+
+                assertEquals(secondaryKey, cursor.key);
+                assertObjectEquals(primaryKey, cursor.value);
+
+                assertClosureThrows(function() {
+                    objectStore.remove(primaryKey)
+                }, "DEADLOCK_ERR");
+            }
+
+            function testDeadlock_UseObjectStoreAfterDeadlock() {
+                var cursor = index.openCursor();
+
+                assertEquals(secondaryKey, cursor.key);
+                assertObjectEquals(primaryKey, cursor.value);
+
+                assertClosureThrows(function() {
+                    objectStore.remove(primaryKey)
+                }, "DEADLOCK_ERR");
+
+                assertClosureThrows(function() {
+                    objectStore.get("foo")
+                }, "NOT_FOUND_ERR");
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Deadlock Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

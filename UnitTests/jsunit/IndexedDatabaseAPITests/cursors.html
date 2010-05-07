@@ -1,0 +1,161 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Cursor Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var manualIndex;
+            var index;
+            var READ_WRITE = 0;
+            var objectStoreName = makeRandomName();
+            var primaryKey = makeRandomName();
+            var manualIndexKey = makeRandomName();
+            var secondaryKey = makeRandomName();
+            var value = {
+                primary: primaryKey,
+                secondary: secondaryKey
+            };
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                objectStore = connection.createObjectStore(objectStoreName, null, true);
+                manualIndex = objectStore.createIndex(makeRandomName(), undefined, true);
+                index = objectStore.createIndex(makeRandomName(), "secondary", true);
+
+                objectStore.put(value, primaryKey);
+                manualIndex.put(primaryKey, manualIndexKey);
+            }
+
+            function tearDown() {
+                objectStore = undefined;
+            }
+
+            function testCreateCursor() {
+                assertNotNull(objectStore.openCursor());
+            }
+
+            function testCreateManualIndexCursor() {
+                assertNotNull(manualIndex.openCursor());
+            }
+
+            function testCreateIndexCursor() {
+                assertNotNull(index.openCursor());
+            }
+
+            function testCursorGet() {
+                var cursor = objectStore.openCursor();
+
+                assertEquals(primaryKey, cursor.key);
+                assertObjectEquals(value, cursor.value);
+            }
+
+            function testIndexCursorGet() {
+                var cursor = index.openCursor();
+
+                assertEquals(secondaryKey, cursor.key);
+                assertEquals(primaryKey, cursor.value);
+            }
+
+            function testManualIndexCursorGet() {
+                var cursor = manualIndex.openCursor();
+
+                assertEquals(manualIndexKey, cursor.key);
+                assertEquals(primaryKey, cursor.value);
+            }
+
+            function testCursorRemove() {
+                var transaction = connection.transaction();
+                var cursor = objectStore.openCursor();
+
+                cursor.remove();
+                cursor.close();
+
+                assertClosureThrows(function() {
+                    objectStore.get(primaryKey)
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testIndexCursorRemove() {
+                var cursor = index.openCursor();
+
+                cursor.remove();
+                cursor.close();
+
+                assertClosureThrows(function() {
+                    index.get(secondaryKey)
+                }, "NOT_FOUND_ERR");
+                assertClosureThrows(function() {
+                    objectStore.get(primaryKey)
+                }, "NOT_FOUND_ERR");
+            }
+
+            function testManualIndexCursorRemove() {
+                var cursor = manualIndex.openCursor();
+
+                cursor.remove();
+                cursor.close();
+
+                assertClosureThrows(function() {
+                    manualIndex.get(manualIndexKey)
+                }, "NOT_FOUND_ERR");
+                assertClosureDoesNotThrow(function() {
+                    objectStore.get(primaryKey)
+                });
+            }
+
+            function testRemovedCursorValue() {
+                var cursor = objectStore.openCursor();
+
+                cursor.remove();
+
+                assertNull(cursor.key);
+                assertNull(cursor.value);
+            }
+
+            function testRemovedIndexCursorValue() {
+                var cursor = index.openCursor();
+
+                cursor.remove();
+
+                assertNull(cursor.key);
+                assertNull(cursor.value);
+            }
+
+            function testRemovedManualIndexCursorValue() {
+                var cursor = manualIndex.openCursor();
+
+                cursor.remove();
+
+                assertNull(cursor.key);
+                assertNull(cursor.value);
+            }
+
+            function testReadOnlyObjectStoreRemoval() {
+                objectStore = connection.openObjectStore(objectStoreName, READ_ONLY);
+                var cursor = objectStore.openCursor();
+
+                assertClosureThrows(function() {
+                    cursor.remove();
+                }, "NOT_ALLOWED_ERR");
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Cursor Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>

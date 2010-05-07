@@ -1,0 +1,166 @@
+<html>    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>
+            Indexed Database Manual Index Cursor Range Tests
+        </title>
+        <script language="JavaScript" type="text/javascript" src="../app/jsUnitCore.js">
+        </script>
+        <script language="JavaScript" type="text/javascript" src="common.js">
+        </script>
+        <script language="JavaScript" type="text/javascript">
+            var connection;
+            var objectStore;
+            var index;
+            var indexKeyLambda = function(i) {
+                return String.fromCharCode(65 + i);
+            };
+            var indexValueLambda = function(i) {
+                return i;
+            };
+            var indexObjectValueLambda = function(i) {
+                return {
+                    primary: i
+                };
+            };
+
+/* ABCDEFGHIJKLMNOPQRSTUVWXYZ 
+        01234567890123456789012345*/
+
+            function setUp() {
+                connection = db.indexedDB.open(makeRandomName(), "Indexed cursor range unit tests");
+
+                objectStore = connection.createObjectStore(makeRandomName(), "primary", true);
+                index = objectStore.createIndex(makeRandomName());
+                for (var i = 0; i < 26; i++) {
+                    var obj = {
+                        primary: i
+                    };
+                    objectStore.put(obj);
+                    index.put(indexValueLambda(i), indexKeyLambda(i));
+                }
+            }
+
+            function tearDown() {
+                objectStore.removeIndex(index.name);
+                connection.removeObjectStore(objectStore.name);
+                objectStore = undefined;
+            }
+
+            function testFullBoundedRangeObjectCursor() {
+                var range = db.IDBKeyRange.bound('A', 'Z');
+                var cursor = index.openObjectCursor(range);
+
+                iterate(0, 25, cursor, undefined, indexKeyLambda, indexObjectValueLambda);
+            }
+
+            function testFullBoundedRange() {
+                var range = db.IDBKeyRange.bound('A', 'Z');
+                var cursor = index.openCursor(range);
+
+                iterate(0, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testBoundedRange() {
+                var range = db.IDBKeyRange.bound('D', 'N');
+                var cursor = index.openCursor(range);
+
+                iterate(3, 13, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testOpenBoundedRange() {
+                var range = db.IDBKeyRange.bound('C', 'L', true, true);
+                var cursor = index.openCursor(range);
+
+                iterate(3, 10, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testLeftCloseBoundedRange() {
+                var range = db.IDBKeyRange.leftBound('T');
+                var cursor = index.openCursor(range);
+
+                iterate(19, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testLeftOpenBoundedRange() {
+                var range = db.IDBKeyRange.leftBound('J', true);
+                var cursor = index.openCursor(range);
+
+                iterate(10, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testCloseRightBoundedRange() {
+                var range = db.IDBKeyRange.rightBound('M');
+                var cursor = index.openCursor(range);
+
+                iterate(0, 12, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testRightOpenBoundedRange() {
+                var range = db.IDBKeyRange.rightBound('P', true);
+                var cursor = index.openCursor(range);
+
+                iterate(0, 14, cursor, undefined, indexKeyLambda, indexValueLambda);
+            }
+
+            function testManuallyPopulatedRangeAfterRemoval() {
+                var range = db.IDBKeyRange.bound('C', 'E');
+                var cursor = index.openCursor(range);
+
+                assertEquals('C', cursor.key);
+                assertObjectEquals(2, cursor.value);
+
+                objectStore.remove(2);
+            }
+
+            function testManuallyPopulatedRangeAfterRemovalAndReopen() {
+                var transaction = connection.transaction();
+                var range = db.IDBKeyRange.bound('C', 'E');
+                var cursor = index.openCursor(range);
+
+                assertEquals('C', cursor.key);
+                assertObjectEquals(2, cursor.value);
+
+                objectStore.remove(2);
+
+                assertEquals('C', cursor.key);
+                assertObjectEquals(2, cursor.value);
+
+                var reopenedCursor = index.openCursor(range);
+                assertEquals('D', reopenedCursor.key);
+                assertObjectEquals(3, reopenedCursor.value);
+
+                transaction.commit();
+            }
+
+            function testManuallyPopulatedRangeAfterRemovalAndContinue() {
+                var transaction = connection.transaction();
+                var range = db.IDBKeyRange.bound('C', 'E');
+                var cursor = index.openCursor(range);
+
+                assertEquals('C', cursor.key);
+                assertObjectEquals(2, cursor.value);
+
+                objectStore.remove(3);
+
+                cursor["continue"]();
+
+                assertEquals('E', cursor.key);
+                assertObjectEquals(4, cursor.value);
+
+                transaction.commit();
+            }
+        </script>
+    </head>
+    
+    <body>
+        <h1>
+            Indexed Database Manual Index Cursor Range Tests
+        </h1>
+        <p>
+            This page contains unit tests. To see them, take a look at the source.
+        </p>
+        <object id="db" type="application/x-indexeddatabase" width="1" height="1">
+        </object>
+    </body>
+</html>
