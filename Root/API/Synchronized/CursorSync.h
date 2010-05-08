@@ -1,6 +1,7 @@
 /**********************************************************\
-See http://code.google.com/p/indexeddb for license
 Copyright Brandon Haynes
+http://code.google.com/p/indexeddb
+GNU Lesser General Public License
 \**********************************************************/
 
 #ifndef BRANDONHAYNES_INDEXEDDB_API_SYNC_CURSORSYNC_H

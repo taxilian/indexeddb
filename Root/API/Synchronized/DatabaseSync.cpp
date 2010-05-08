@@ -1,6 +1,7 @@
 /**********************************************************\
-See http://code.google.com/p/indexeddb for license
 Copyright Brandon Haynes
+http://code.google.com/p/indexeddb
+GNU Lesser General Public License
 \**********************************************************/
 
 #include <DOM/JSAPI_DOMDocument.h>
