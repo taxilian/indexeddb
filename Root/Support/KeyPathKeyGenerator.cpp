@@ -23,11 +23,13 @@ Key KeyPathKeyGenerator::generateKey(const Data& context) const
 
 const FB::variant KeyPathKeyGenerator::generateKey(FB::variant value) const
 	{
-	if(!value.is_of_type<FB::JSObject>())
-		return FB::variant();
-	else 
-		return value.cast<FB::JSObject>()->GetProperty(keyPath);
+	return value.is_of_type<FB::JSObject>()
+		? generateKey(value.cast<FB::JSObject>())
+		: FB::variant();
 	}
+
+const FB::variant KeyPathKeyGenerator::generateKey(FB::JSObject object) const
+	{ return object->GetProperty(keyPath); }
 
 }
 }
