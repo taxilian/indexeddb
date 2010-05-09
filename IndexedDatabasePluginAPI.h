@@ -4,6 +4,9 @@
 
 #include "Root/API/Synchronized/EnvironmentSync.h"
 
+#ifndef BRANDONHAYNES_INDEXEDDB_INDEXEDDATABASEPLUGINAPI_H
+#define BRANDONHAYNES_INDEXEDDB_INDEXEDDATABASEPLUGINAPI_H
+
 ///<summary>
 /// Primary entry point into our project.  We expose a few other stub instances so that
 /// user agents may retreive constants.
@@ -21,3 +24,5 @@ public:
 private:
 	FB::BrowserHost host;
 };
+
+#endif

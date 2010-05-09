@@ -8,15 +8,20 @@ GNU Lesser General Public License
 #define BRANDONHAYNES_INDEXEDDB_API_KEYRANGE_H
 
 #include <JSAPIAuto.h>
+#include <APITypes.h>
+#include "../../IndexedDatabasePluginAPI.h"
 
 namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents a range of keys as defined by the Indexed Database API.
+/// Key ranges have a left and right bound along with a set of associated flags
+///</summary>
 class KeyRange : public FB::JSAPIAuto
 	{
 	public:
-		KeyRange(void);
 		KeyRange(FB::variant left, FB::variant right, int flags);
 
 		enum IntervalType { SINGLE = 0, LEFT_OPEN = 1, RIGHT_OPEN = 2, LEFT_BOUND = 4, RIGHT_BOUND = 8 };
@@ -35,6 +40,8 @@ class KeyRange : public FB::JSAPIAuto
 		FB::AutoPtr<KeyRange> rightBound(FB::variant bound, const bool open);
 
 	private:
+		KeyRange(void);
+
 		FB::variant left;
 		FB::variant right;
 		const unsigned short flags;
@@ -45,6 +52,8 @@ class KeyRange : public FB::JSAPIAuto
 		int GetRightOpen() const { return RIGHT_OPEN; }
 		int GetLeftBound() const { return LEFT_BOUND; }
 		int GetRightBound() const { return RIGHT_BOUND; }
+
+		friend FB::JSOutObject IndexedDatabasePluginAPI::getKeyRange();
 	};
 
 }
