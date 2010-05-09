@@ -15,12 +15,19 @@ namespace Implementation {
 
 	class ObjectStore;
 
+	///<summary>
+	/// This class represents a data value in the Indexed Database API implementation.  Data instances
+	/// are exchanged between the API layer and implementation layer.
+	///</summary>
 	class Database
 		{
 		public:
 			virtual ~Database() { }
 
+			/// Removes the given object store from the database
 			virtual void removeObjectStore(const std::string& objectStoreName, TransactionContext& transactionContext) = 0;
+			
+			// Gets the metadata associated with this database
 			virtual ObjectStore& getMetadata() = 0;
 		};
 	}

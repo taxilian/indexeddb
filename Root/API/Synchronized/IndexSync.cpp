@@ -10,7 +10,7 @@ GNU Lesser General Public License
 #include "../../Implementation/Index.h"
 #include "../../Implementation/KeyGenerator.h"
 #include "../../Implementation/AbstractDatabaseFactory.h"
-#include "../../Support/KeyGeneratorHelper.h"
+#include "../../Support/KeyPathKeyGenerator.h"
 #include "../../Support/Convert.h"
 #include "../DatabaseException.h"
 
@@ -37,7 +37,7 @@ IndexSync::IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, Transac
 	loadMetadata();
 
 	keyGenerator = auto_ptr<KeyGenerator>(keyPath.is_initialized()
-		? new Support::KeyGeneratorHelper(host, keyPath.get())
+		? new Support::KeyPathKeyGenerator(host, keyPath.get())
 		: NULL);
 	implementation = keyPath.is_initialized()
 		? Implementation::AbstractDatabaseFactory::getInstance().openIndex(
@@ -53,7 +53,7 @@ IndexSync::IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, Transac
 	  host(host),
 	  metadata(metadata, Metadata::Index, name),
 	  keyGenerator(keyPath.is_initialized()
-	  ? new Support::KeyGeneratorHelper(host, keyPath.get())
+		? new Support::KeyPathKeyGenerator(host, keyPath.get())
 		: NULL),
 	  implementation(keyPath.is_initialized()
 		? Implementation::AbstractDatabaseFactory::getInstance().createIndex(
@@ -233,8 +233,8 @@ void IndexSync::loadMetadata()
 	Data keyPathValue(metadata.getMetadata("keyPath", *transaction));
 	this->keyPath = keyPathValue.getType() == Data::Undefined 
 		? optional<string>()
-		: optional<string>((char*)keyPathValue.getUntypedValue());
-	this->unique = *(bool*)metadata.getMetadata("unique", *transaction).getUntypedValue();
+		: optional<string>((char*)keyPathValue.getRawValue());
+	this->unique = *(bool*)metadata.getMetadata("unique", *transaction).getRawValue();
 
 	transaction->commit();
 	}

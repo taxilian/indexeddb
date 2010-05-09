@@ -19,43 +19,43 @@ namespace Implementation {
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
 	path DatabaseLocation::userHome(getenv("APPDATA"));
-	path DatabaseLocation::environmentHome("indexedDB");
+	path DatabaseLocation::databaseHome("indexedDB");
 	const char* DatabaseLocation::illegalFilenameCharacters = "\\/*?<>|`";
 #else
 	path DatabaseLocation::userHome(getenv("HOME"));
-	path DatabaseLocation::environmentHome(".indexedDB");
+	path DatabaseLocation::databaseHome(".indexedDB");
 	const char* DatabaseLocation::illegalFilenameCharacters = "\\/*?<>|`";
 #endif
 
-const string DatabaseLocation::getEnvironmentPath(const string& origin, const string& environmentName)
+const string DatabaseLocation::getDatabasePath(const string& origin, const string& databaseName)
 	{
 	ensurePathValid(origin);
-	ensurePathValid(environmentName);
+	ensurePathValid(databaseName);
 
-	const path environmentRoot(userHome / environmentHome);
-	const path originRoot(environmentRoot / (origin.size() != 0 ? origin : "local_filesystem"));
-	const path environmentHome(originRoot / environmentName);
+	const path databaseRoot(userHome / databaseHome);
+	const path originRoot(databaseRoot / (origin.size() != 0 ? origin : "local_filesystem"));
+	const path databaseHome(originRoot / databaseName);
 
 	try
 		{
-		if(!exists(environmentRoot))
-			create_directory(environmentRoot);
+		if(!exists(databaseRoot))
+			create_directory(databaseRoot);
 		if(!exists(originRoot))
 			create_directory(originRoot);
-		if(!exists(environmentHome))
-			create_directory(environmentHome);
+		if(!exists(databaseHome))
+			create_directory(databaseHome);
 		}
 	catch(basic_filesystem_error<path>& e)
 		{ throw ImplementationException(e.what(), ImplementationException::NON_TRANSIENT_ERR); }
 
-	return environmentHome.file_string();
+	return databaseHome.file_string();
 	}
 
-const string DatabaseLocation::getObjectStorePath(const string& origin, const string& environmentName, const string& objectStoreName)
+const string DatabaseLocation::getObjectStorePath(const string& origin, const string& databaseName, const string& objectStoreName)
 	{
-	ensurePathValid(environmentName);
+	ensurePathValid(databaseName);
 	ensurePathValid(objectStoreName);
-	return (userHome / environmentHome / (origin.size() != 0 ? origin : "local_filesystem") / environmentName / objectStoreName).file_string();
+	return (userHome / databaseHome / (origin.size() != 0 ? origin : "local_filesystem") / databaseName / objectStoreName).file_string();
 	}
 
 void DatabaseLocation::ensurePathValid(const std::string& path)

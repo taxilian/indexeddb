@@ -14,6 +14,10 @@ namespace IndexedDB {
 namespace Implementation { 
 namespace BerkeleyDB {
 
+	///<summary>
+	/// This class is a concrete realization of the abstract implementation factory; it produces instances
+	/// that utilize Berkeley DB.
+	///</summary>
 	class BerkeleyDatabaseFactory : public AbstractDatabaseFactory
 		{
 		public:

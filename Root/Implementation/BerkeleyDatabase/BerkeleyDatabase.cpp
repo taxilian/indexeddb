@@ -36,7 +36,7 @@ namespace BerkeleyDB
 
 		try 
 			{ 
-			environment.open(DatabaseLocation::getEnvironmentPath(origin, name).c_str(), environmentFlags, 0); }
+			environment.open(DatabaseLocation::getDatabasePath(origin, name).c_str(), environmentFlags, 0); }
 		catch(DbException& e)
 			{ throw ImplementationException("UNKNOWN_ERR", ImplementationException::UNKNOWN_ERR, e.get_errno()); }
 

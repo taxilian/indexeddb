@@ -56,7 +56,7 @@ StringVector Metadata::getMetadataCollection(const string& key, TransactionConte
 	Data& data = getMetadata(key, transactionContext);
 	if(data.getType() == Data::String)
 		{
-		string collectionString((char*)data.getUntypedValue());
+		string collectionString((char*)data.getRawValue());
 		boost::char_delimiters_separator<char> separator(false, "", separatorToken);
 		boost::tokenizer<boost::char_delimiters_separator<char>> tokens(collectionString, separator);
 		StringVector result(tokens.begin(), tokens.end());

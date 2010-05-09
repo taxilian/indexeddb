@@ -18,26 +18,36 @@ namespace IndexedDB
 	
 	namespace API 
 		{ 
+		///<summary>
+		/// This class represents an exceptional condition at the API level.  This class extends a
+		/// FireBreath script error, and is safe to exchange with the user agent environment.
+		///</summary>
 		class DatabaseException : public FB::script_error
 			{
 			public:
+				// A set of error codes defined by the Indexed Database API
 				enum APICode { UNKNOWN_ERR = 0,		NON_TRANSIENT_ERR = 1,	NOT_FOUND_ERR = 2,	CONSTRAINT_ERR = 3, 
 							   DATA_ERR = 4,		NOT_ALLOWED_ERR = 5,	SERIAL_ERR = 11,	RECOVERABLE_ERR = 21, 
 							   TRANSIENT_ERR = 31,	TIMEOUT_ERR = 32,		DEADLOCK_ERR = 33 };
 
+				// Create an instance with the given error code.  The code is converted to a string; this becomes 
+				// the exeption's message
 				DatabaseException(const APICode code)
 					: code(code), 
 					  message(boost::lexical_cast<std::string>(code)), script_error(boost::lexical_cast<std::string>(code))
 					{ }
 
+				// Create an instance with the given code and message
 				DatabaseException(const std::string& message, APICode code)
 					: code(code), message(message), script_error(message)
 					{ }
 
+				// Create an instance using the underlying implementation exception as a data source
 				DatabaseException(Implementation::ImplementationException& cause)
 					: code(static_cast<APICode>(cause.code)), message(cause.message), script_error(cause.message)
 					{ }
 
+				// Create an instance using the underlying implementation exception, but overriding the message
 				DatabaseException(std::string message, Implementation::ImplementationException& cause)
 					: code(static_cast<APICode>(cause.code)), message(message + " (implementation reported " + cause.message + ")"), script_error(cause.message)
 					{ }
@@ -49,6 +59,8 @@ namespace IndexedDB
 				const APICode code;
 				const std::string message;
 
+				// Private members to expose error codes to the user agent environment 
+				// (FireBreath doesn't allow us to expose the fields directly.)
 				APICode getUnknownErrorCode() const { return UNKNOWN_ERR; }
 				APICode getNonTransientErrorCode() const { return NON_TRANSIENT_ERR; }
 				APICode getNotFoundErrorCode() const { return NOT_FOUND_ERR; }

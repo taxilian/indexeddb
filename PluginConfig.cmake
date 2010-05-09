@@ -18,12 +18,12 @@ set(IFBComEventSource_DESC "IndexedDatabasePlugin IFBComEventSource Interface")
 set(AXVERSION_NUM "1")
 
 # NOTE: THESE GUIDS *MUST* BE UNIQUE TO YOUR PLUGIN/ACTIVEX CONTROL!  YES, ALL OF THEM!
-set(FBTYPELIB_GUID 178796fe-fd70-445e-bfdb-ed13752d71dc)
-set(IFBControl_GUID e34b73bf-381e-4860-bde3-a68e79005108)
-set(FBControl_GUID 53208bfb-b87d-4fc2-a4e0-70c69b1096b1)
-set(IFBComJavascriptObject_GUID c0dcd803-f756-4a31-ba7c-5726e43d9b4f)
-set(FBComJavascriptObject_GUID d799bbd0-92b2-4144-bd87-2918b488fea5)
-set(IFBComEventSource_GUID 47a31460-9ba0-421c-9ef1-e88ec94411ff)
+set(FBTYPELIB_GUID 178796fe-ed70-445e-bfdb-ed13752d71dc)
+set(IFBControl_GUID e34b73bf-281e-4860-bde3-a68e79005108)
+set(FBControl_GUID 53208bfb-a87d-4fc2-a4e0-70c69b1096b1)
+set(IFBComJavascriptObject_GUID c0dcd803-e756-4a31-ba7c-5726e43d9b4f)
+set(FBComJavascriptObject_GUID d799bbd0-82b2-4144-bd87-2918b488fea5)
+set(IFBComEventSource_GUID 47a31460-8ba0-421c-9ef1-e88ec94411ff)
 
 # these are the pieces that are relevant to using it from Javascript
 set(ACTIVEX_PROGID "BrandonHaynes.IndexedDatabasePlugin")

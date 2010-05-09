@@ -13,20 +13,29 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents the Cursor interface in the Indexed Database API.
+///</summary>
 class Cursor : public FB::JSAPIAuto
 {
 public:
+	// The direction of a cursor
 	enum Direction { NEXT = 0, NEXT_NO_DUPLICATE = 1, PREV = 2, PREV_NO_DUPLICATE = 3 };
 
+	// Returns a stub instance of this interface so clients may access the direction enum
 	static const FB::AutoPtr<Cursor> getInstance()
 		{ return FB::AutoPtr<Cursor>(new Cursor()); }
 
-	const Cursor::Direction getDirection() { return direction; }
+	// Gets the direction associated with this cursor
+	Cursor::Direction getDirection() { return direction; }
 
 protected:
-	Cursor();
+	// Creates a cursor with the given direction
 	Cursor(const Cursor::Direction direction);
+	// If we make this fully an interface, kill this constructor
+	Cursor();
 
+	// Private helper methods used to grant clients access to the direction constants via FireBreath
 	int getNext() const { return NEXT; }
 	int getNextNoDuplicate() const { return NEXT_NO_DUPLICATE; }
 	int getPrevious() const { return PREV; }

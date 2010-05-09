@@ -14,6 +14,10 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents the IndexedDB interface in the Indexed Database API.  Because our 
+/// namespace is also called "IndexedDB", we use an alternate name here.
+///</summary>
 class IndexedDatabase : public FB::JSAPIAuto
 {
 public:

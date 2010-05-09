@@ -15,6 +15,9 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents the an index in the Indexed Database API.  
+///</summary>
 class Index : public FB::JSAPIAuto
 {
 public:

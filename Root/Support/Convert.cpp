@@ -58,15 +58,15 @@ FB::variant Convert::toVariant(FB::BrowserHost host, const Data& data)
 	switch(data.getType())
 		{
 		case Data::String:
-			return string(static_cast<const char*>(data.getUntypedValue()));
+			return string(static_cast<const char*>(data.getRawValue()));
 		case Data::Integer:
-			return *static_cast<const long*>(data.getUntypedValue());
+			return *static_cast<const long*>(data.getRawValue());
 		case Data::Boolean:
-			return *static_cast<const bool *>(data.getUntypedValue());
+			return *static_cast<const bool *>(data.getRawValue());
 		case Data::Number:
-			return *static_cast<const double *>(data.getUntypedValue());
+			return *static_cast<const double *>(data.getRawValue());
 		case Data::Object:
-			return parse(host, string(static_cast<const char*>(data.getUntypedValue())));
+			return parse(host, string(static_cast<const char*>(data.getRawValue())));
 		case Data::Null:
 			return FB::variant();
 		case Data::Undefined:

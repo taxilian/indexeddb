@@ -12,7 +12,7 @@ GNU Lesser General Public License
 #include "../../Implementation/AbstractDatabaseFactory.h"
 #include "../../Implementation/Data.h"
 #include "../../Support/Convert.h"
-#include "../../Support/KeyGeneratorHelper.h"
+#include "../../Support/KeyPathKeyGenerator.h"
 
 using std::auto_ptr;
 using std::string;
@@ -247,7 +247,7 @@ FB::variant ObjectStoreSync::generateKey(FB::variant value)
 	FB::variant key;
 
 	if(keyPath.is_initialized())
-		key = Support::KeyGeneratorHelper(host, keyPath.get()).generateKey(value);
+		key = Support::KeyPathKeyGenerator(host, keyPath.get()).generateKey(value);
 
 	if(key.empty())
 		{
@@ -282,9 +282,9 @@ void ObjectStoreSync::loadMetadata(TransactionContext& transactionContext)
 	Data keyPathValue(metadata.getMetadata("keyPath", *transaction));
 	keyPath = keyPathValue.getType() == Data::Undefined 
 		? optional<string>()
-		: optional<string>((char*)keyPathValue.getUntypedValue());
-	autoIncrement = *(bool*)metadata.getMetadata("autoIncrement", *transaction).getUntypedValue();
-	nextKey = *(long*)metadata.getMetadata("nextKey", *transaction).getUntypedValue();
+		: optional<string>((char*)keyPathValue.getRawValue());
+	autoIncrement = *(bool*)metadata.getMetadata("autoIncrement", *transaction).getRawValue();
+	nextKey = *(long*)metadata.getMetadata("nextKey", *transaction).getRawValue();
 
 	transaction->commit();
 	}

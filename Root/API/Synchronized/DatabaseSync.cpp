@@ -45,8 +45,8 @@ DatabaseSync::DatabaseSync(FB::BrowserHost host, const string& name, const strin
 
 DatabaseSync::~DatabaseSync()
 	{
-	if(getCurrentTransaction().is_initialized())
-		getCurrentTransaction()->close();
+	if(currentTransaction.is_initialized())
+		(*currentTransaction)->close();
 
 	openObjectStores.release();
 	}
@@ -92,16 +92,16 @@ FB::JSOutObject DatabaseSync::openObjectStore(const string& name, const FB::Catc
 	return static_cast<FB::JSOutObject>(openObjectStore(name, mode));
 	}
 
-FB::variant DatabaseSync::getVersion() const
-	{ return Convert::toVariant(host, metadata.getMetadata("version", transactionFactory.getTransactionContext())); }
-
-long DatabaseSync::setVersion(const string& version)
-	{
-	metadata.putMetadata("version", Data(version), transactionFactory.getTransactionContext());
-
-	//TODO 1.0 supports void return
-	return 0;
+optional<string> DatabaseSync::getVersion() const
+	{ 
+	Data version = metadata.getMetadata("version", transactionFactory.getTransactionContext());
+	return version.getType() == Data::Undefined
+		? optional<string>()
+		: Convert::toVariant(host, metadata.getMetadata("version", transactionFactory.getTransactionContext())).cast<string>(); 
 	}
+
+void DatabaseSync::setVersion(const string& version)
+	{ metadata.putMetadata("version", Data(version), transactionFactory.getTransactionContext()); }
 
 FB::AutoPtr<ObjectStoreSync> DatabaseSync::createObjectStore(const string& name, const string& keyPath, bool autoIncrement)
 	{ 
@@ -264,11 +264,11 @@ FB::AutoPtr<TransactionSync> DatabaseSync::transaction(optional<StringVector>& s
 		return currentTransaction.get();
 	}
 
-optional<TransactionSync&> DatabaseSync::getCurrentTransaction() const
+optional<Transaction&> DatabaseSync::getCurrentTransaction() const
 	{
 	return currentTransaction.is_initialized()
 		? *currentTransaction.get()
-		: optional<TransactionSync&>();
+		: optional<Transaction&>();
 	}
 
 FB::variant DatabaseSync::getCurrentTransactionVariant() const
@@ -290,7 +290,7 @@ void DatabaseSync::onTransactionAborted(const Transaction& transaction)
 	this->currentTransaction.reset(); 
 	}
 
-const std::string DatabaseSync::getOrigin()
+std::string DatabaseSync::getOrigin()
 	{ return host->getDOMDocument().getProperty<string>("domain"); }
 
 }
