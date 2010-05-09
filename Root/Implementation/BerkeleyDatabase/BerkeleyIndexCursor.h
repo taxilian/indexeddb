@@ -20,6 +20,9 @@ namespace Implementation {
 
 		class BerkeleyIndex;
 
+		///<summary>
+		/// This class represents a cursor over a Berkeley DB index
+		///</summary>
 		class BerkeleyIndexCursor : public BerkeleyCursor
 			{
 			public:
@@ -29,6 +32,7 @@ namespace Implementation {
 				virtual Data getData(TransactionContext& transactionContext);
 
 			private:
+				// Cursor must be configured at creation to return primary keys or primary values
 				const bool dataArePrimaryKeys;
 			};
 		}

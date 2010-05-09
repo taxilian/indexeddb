@@ -20,6 +20,12 @@ namespace BerkeleyDB {
 
 	class BerkeleyObjectStore;
 
+	///<summary>
+	/// This class represents a manual index to an object store (the spec calls them non-auto-populated indices).
+	/// We use an unassociated Berkeley DB for the index; keys are synchronized automatically, during get and cursor
+	/// operations.  This is a little bit inefficient, but the spec requires we NOT automatically delete primary
+	/// keys during an index delete, and Berkeley DB does not support this.  So we do things the hard way.
+	///</summary>
 	class BerkeleyManualIndex : public Index
 		{
 		public:
@@ -33,16 +39,22 @@ namespace BerkeleyDB {
 			virtual void close();
 
 		private:
+			// The object store with which this association is associated
 			BerkeleyObjectStore& objectStore;
+			// The underlying object store that represents this index
 			Db implementation;
+			// Flag indicating whether the index is open
 			volatile bool isOpen;
+
+			// Some of our operations must be synchronized for thread safety
 			boost::mutex synchronization;
 
+			// Helper methods to ensure primary keys exist; we need this to maintain consistency between
+			// the index and the associated object store.
 			Key ensurePrimaryKeyExists(const Dbt& primaryKeyDbt, const Key& secondaryKey, TransactionContext& transactionContext);
 			Data ensurePrimaryKeyExists(const Data& data, const Key& secondaryKey, TransactionContext& transactionContext);
 
-			static int callback(Db *secondary, const Dbt *key, const Dbt *data, Dbt *result);
-
+			// A cursor over this index will need access to our implementation
 			friend class BerkeleyManualIndexCursor;
 		};
 	}

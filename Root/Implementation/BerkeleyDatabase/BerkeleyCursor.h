@@ -27,6 +27,12 @@ namespace Implementation {
 		
 	namespace BerkeleyDB {
 
+		///<summary>
+		/// This abstract class represents a cursor in a Berkeley DB environment.
+		/// In addition to providing default implementations for most methods
+		/// required by the Cursor interface, this class provides helper functions
+		/// useful in derived classes.
+		///</summary>
 		class BerkeleyCursor : public Cursor
 		{
 		public:
@@ -41,21 +47,28 @@ namespace Implementation {
 			virtual void remove();
 
 		protected:
+			/// Construct a Berkeley DB-backed cursor with the given (left, right) interval (possibly open on one or both ends)
 			BerkeleyCursor(Db& source, const Key& left, const Key& right, const bool openLeft, const bool openRight, const bool isReversed, const bool omitDuplicates, TransactionContext& transactionContext);
 
 			boost::mutex synchronization;
 
+			/// Initializes a cursor in the given transaction context; if none exists, it creates an implicit
+			/// context (via implicitTransaction)
 			Dbc* makeCursor(Db& source, TransactionContext transactionContext);
 			Dbc* getCursor() { return cursor; }
+			/// Helper method to iterate the underlying cursor
 			virtual bool next(Dbc* cursor, TransactionContext& transactionContext);
+			/// Helper method to ensure that the cursor is open; throw otherwise			
 			void ensureOpen();
 
 		private:
+			// The implict transaction associated with this cursor (none if the cursor was created using an explicit context)
 			DbTxn* implicitTransaction;
 			Dbc* cursor;
 			long totalCount;
 			bool isOpen;
 
+			/// Utility methods used to initialize a cursor with one of the (many) supported intervals 
 			void startCursor();
 			static void startCursor(BerkeleyCursor& berkeleyCursor);
 			static void startCursor(BerkeleyCursor& berkeleyCursor, Dbc* cursor);
@@ -65,6 +78,7 @@ namespace Implementation {
 			static void startOpenRightIntervalReverseCursor(Dbc* cursor, const Key& right);
 			static void closeCursor(Dbc* cursor);
 
+			/// Utility method to determine if the current cursor is outside of its defined interval
 			bool isOutOfRange(const Dbt& key);
 			bool isOutOfRange(const Key& key);
 		};

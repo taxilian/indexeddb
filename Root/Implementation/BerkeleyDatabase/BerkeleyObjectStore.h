@@ -24,6 +24,9 @@ namespace Implementation {
 	namespace BerkeleyDB {
 		class BerkeleyDatabase;
 
+		///<summary>
+		/// This class represents an Indexed Database API object store; it is backed by a Berkeley DB database.
+		///</summary>
 		class BerkeleyObjectStore : public ObjectStore
 			{
 			public:
@@ -39,13 +42,19 @@ namespace Implementation {
 		
 				virtual void removeIndex(const std::string& name, TransactionContext& transactionContext);
 
+				/// Get the underlying implementation associated with this object store.  Would have
+				/// preferred to have not exposed this, but that would have required lots of friends.
 				Db& getImplementation() { return implementation; }
 
 			private:
+				// Our backing Berkeley DB database for this object store
 				Db implementation;
+				// Flag indicating whether this object store is read-only
 				const bool readOnly;
+				// Flag indicating whether this object store is still open
 				volatile bool isOpen;
 
+				// Used to thread-synch critical sections
 				boost::mutex synchronization;
 			};
 		}

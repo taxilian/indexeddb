@@ -20,6 +20,9 @@ namespace Implementation {
 
 		class BerkeleyObjectStore;
 
+		///<summary>
+		/// This class represents a cursor over an object store backed by a Berkeley DB database
+		///</summary>
 		class BerkeleyObjectStoreCursor : public BerkeleyCursor
 			{
 			public:
