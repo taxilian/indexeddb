@@ -30,30 +30,45 @@ class IndexSync;
 class DatabaseSync;
 class KeyRange;
 
+///<summary>
+/// This class represents a synchronized object store per the Indexed Database API draft
+///</summary>
 class ObjectStoreSync : public ObjectStore,
 						public Support::LifeCycleObservable<ObjectStoreSync>
 	{
 	public:
+		// Create an object store, with or without a key path
 		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const std::string& keyPath, const bool autoIncrement);
 		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const bool autoIncrement);
+		// Open an object store in the given mode
 		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const Implementation::ObjectStore::Mode mode);
+		// TODO: The subtle differences in constructors will be confusing to subsequent developers; change to static factory methods and make these protected
+		
 		~ObjectStoreSync(void);
 
+		// Close this object store
 		void close();
 
+		// Get the value from the object store identified by the given key
 		FB::variant get(FB::variant key);
+		// Put a new key/value pair into the object store
 		FB::variant put(FB::variant value, const FB::CatchAll& args);
+		// Remove the key/value pair from the object store as identified by the given key
 		FB::variant remove(FB::variant key);
 
+		// Open a new cursor over this object store, bounded by the given range
 		FB::AutoPtr<CursorSync> openCursor(const boost::optional<KeyRange> range, const Cursor::Direction direction);
 
+		// Create a new index over this object store
 		FB::AutoPtr<IndexSync> createIndex(const std::string name, const boost::optional<std::string> keyPath, const bool unique); //raises (DatabaseException);
-		long removeIndex(const std::string& indexName);
+		// Remove an existing index from the object store
+		void removeIndex(const std::string& indexName);
+		void removeIndex(const Index& index) { removeIndex(index.getName()); }
 
 		Implementation::ObjectStore& getImplementation() const { return *implementation; }
 
 		virtual StringVector getIndexNames() const;
-		virtual const FB::variant getKeyPath() const { 
+		virtual FB::variant getKeyPath() const { 
 			return keyPath.is_initialized() ? keyPath.get() : FB::variant(); }
 
 	protected:

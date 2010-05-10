@@ -17,12 +17,16 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents an object store as defined by the Indexed Database API.  It exposes all
+/// functionality required by the specification.
+///</summary>
 class ObjectStore : public FB::JSAPIAuto
 	{
 	public:
-		const Implementation::ObjectStore::Mode getMode() const { return mode; }
-		const std::string getName() const { return name; }
-		virtual const FB::variant getKeyPath() const = 0;
+		Implementation::ObjectStore::Mode getMode() const { return mode; }
+		std::string getName() const { return name; }
+		virtual FB::variant getKeyPath() const = 0;
 		virtual std::vector<std::string> getIndexNames() const = 0;
 
 	protected:
@@ -32,7 +36,8 @@ class ObjectStore : public FB::JSAPIAuto
 		const Implementation::ObjectStore::Mode mode;
 		const std::string name;
 
-		virtual FB::VariantList getIndexNameVariants() { return FB::make_variant_list(getIndexNames()); }
+		// These helper methods convert strongly-typed values into weakly-typed FireBreath-compatible values
+		FB::VariantList getIndexNameVariants() const { return FB::make_variant_list(getIndexNames()); }
 		int getModeInteger(void) const { return mode; }
 		int getReadWrite(void) const  { return Implementation::ObjectStore::READ_WRITE; }
 		int getReadOnly(void) const  { return Implementation::ObjectStore::READ_ONLY; }

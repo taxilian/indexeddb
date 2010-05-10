@@ -80,7 +80,7 @@ void ObjectStoreSync::initializeMethods()
 
 	registerMethod("createIndex", FB::make_method(this, static_cast<FB::JSOutObject (ObjectStoreSync::*)(const string, const FB::CatchAll &)>(&ObjectStoreSync::createIndex)));
 	registerMethod("openIndex", FB::make_method(this, &ObjectStoreSync::openIndex));
-	registerMethod("removeIndex", FB::make_method(this, &ObjectStoreSync::removeIndex));
+	registerMethod("removeIndex", FB::make_method(this, static_cast<void (ObjectStoreSync::*)(const string&)>(&ObjectStoreSync::removeIndex)));
 	}
 
 FB::variant ObjectStoreSync::get(FB::variant key)
@@ -224,7 +224,7 @@ FB::JSOutObject ObjectStoreSync::openIndex(const string& name)
 		{ throw DatabaseException(e); }
 	}
 
-long ObjectStoreSync::removeIndex(const string& indexName)
+void ObjectStoreSync::removeIndex(const string& indexName)
 	{
 	try
 		{ 
@@ -238,8 +238,6 @@ long ObjectStoreSync::removeIndex(const string& indexName)
 		}
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
-
-	return 0;
 	}
 
 FB::variant ObjectStoreSync::generateKey(FB::variant value)
