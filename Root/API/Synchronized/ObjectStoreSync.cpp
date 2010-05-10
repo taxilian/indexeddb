@@ -125,15 +125,12 @@ FB::variant ObjectStoreSync::put(FB::variant value, const FB::CatchAll& args)
 	return key;
 	}
 
-FB::variant ObjectStoreSync::remove(FB::variant key)
+void ObjectStoreSync::remove(FB::variant key)
 	{ 
 	try
 		{ implementation->remove(Convert::toKey(host, key), transactionFactory.getTransactionContext()); }
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
-
-	//TODO void return
-	return FB::variant();
 	}
 
 void ObjectStoreSync::close()

@@ -53,7 +53,7 @@ class ObjectStoreSync : public ObjectStore,
 		// Put a new key/value pair into the object store
 		FB::variant put(FB::variant value, const FB::CatchAll& args);
 		// Remove the key/value pair from the object store as identified by the given key
-		FB::variant remove(FB::variant key);
+		void remove(FB::variant key);
 
 		// Open a new cursor over this object store, bounded by the given range
 		FB::AutoPtr<CursorSync> openCursor(const boost::optional<KeyRange> range, const Cursor::Direction direction);
