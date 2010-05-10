@@ -42,9 +42,9 @@ class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync
 		// Iterates the cursor either to the next key/value pair, or the given (optional) key
 		bool next(const FB::CatchAll& args);
 		// Remove the key/value pair at the current cursor position
-		FB::variant remove();
+		void remove();
 		// Close this cursor
-		int close();
+		void close();
 
 	protected:
 		// By being lifecycle-observable, this object will receive messages when an associated transaction is 

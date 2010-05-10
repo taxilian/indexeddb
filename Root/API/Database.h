@@ -60,8 +60,8 @@ namespace IndexedDB {
 			const std::string description;
 			
 			// Grant access to these methods so that they can notify us when the transaction state changes
-			friend long Transaction::commit();
-			friend long Transaction::abort();
+			friend void Transaction::commit();
+			friend void Transaction::abort();
 
 			// These methods convert the name vectors into FireBreath-compatible variants/variant lists
 			FB::VariantList getIndexVariants() { return FB::make_variant_list(getIndexNames()); }

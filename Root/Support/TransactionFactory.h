@@ -18,6 +18,12 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents a source for (i) the current transaction context, (ii) the current database context,
+/// and (iii) a factory for new transactions.
+///</summary>
+// TODO: We might be violating the SRP here; should we separate?  If not, this class could use a better name
+// TODO: Chaining our calls is a bit silly.  Pass references (see RootTransactionFactory).
 class TransactionFactory
 	{
 	public:
@@ -25,6 +31,7 @@ class TransactionFactory
 			: transactionFactory(&transactionFactory)
 			{ }
 
+		// Defer all calls to our "parent" transaction factory, ultimately implemented by the RootTransactionFactory
 		virtual Implementation::TransactionContext getTransactionContext() const
 			{ return transactionFactory->getTransactionContext(); }
 		virtual Implementation::Database& getDatabaseContext() const
@@ -33,6 +40,7 @@ class TransactionFactory
 		std::auto_ptr<Implementation::Transaction> createTransaction() const
 			{ return createTransaction(getTransactionContext()); }
 
+		// We know how to initiate a new transaction, so do it here
 		std::auto_ptr<Implementation::Transaction> createTransaction(Implementation::TransactionContext& transactionContext) const
 			{ return Implementation::AbstractDatabaseFactory::getInstance()
 				.createTransaction(getDatabaseContext(), 

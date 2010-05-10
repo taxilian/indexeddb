@@ -132,14 +132,12 @@ FB::variant IndexSync::put(FB::variant value, const FB::CatchAll& args)
 	return key;
 	}
 
-FB::variant IndexSync::remove(FB::variant key)
+void IndexSync::remove(FB::variant key)
 	{
-	//TODO return void
 	try
 		{ implementation->remove(Convert::toKey(host, key), transactionFactory.getTransactionContext()); }
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
-	return 0;
 	}
 
 void IndexSync::close()

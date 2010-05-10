@@ -41,7 +41,7 @@ public:
 	// Update the primary value associated with the secondary key in the database
 	FB::variant put(FB::variant value, const FB::CatchAll& args);
 	// Remove the secondary key (and possibily the primary key/value pair) from the index
-	FB::variant remove(FB::variant secondaryKey);
+	void remove(FB::variant secondaryKey);
 	// Close this index
 	void close();
 

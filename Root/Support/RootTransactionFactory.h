@@ -16,6 +16,12 @@ namespace API {
 	class DatabaseSync;
 	class Implementation::Database;
 
+	///<summary>
+	/// This class represents the root of the transaction factory tree.  Most all synchronized
+	/// classes hold on to a reference of the TransactionFactory, but defer to this one for
+	/// actual implementation.
+	///</summary>
+	// TODO: This is a little silly; we should be passing interface references and not chaining calls.
 	class RootTransactionFactory : public TransactionFactory
 		{
 		public:
@@ -23,6 +29,7 @@ namespace API {
 			virtual Implementation::Database& getDatabaseContext() const
 				{ return implementation; }
 
+			// Associate a new transaction factory with the given database and underlying implementation
 			RootTransactionFactory(DatabaseSync& database, Implementation::Database& implementation) 
 				: database(database), implementation(implementation), TransactionFactory()
 				{ }

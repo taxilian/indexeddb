@@ -113,22 +113,18 @@ bool CursorSync::next(const FB::CatchAll& args)
 		{ throw DatabaseException(e); }
 	}
 
-FB::variant CursorSync::remove()
+void CursorSync::remove()
 	{ 
 	if(!readOnly)
 		this->implementation->remove();
 	else
 		throw DatabaseException("NOT_ALLOWED_ERR", DatabaseException::NOT_ALLOWED_ERR);
-	//TODO change to void return type
-	return FB::variant();
 	}
 
-//TODO change return type
-int CursorSync::close()
+void CursorSync::close()
 	{
 	this->raiseOnCloseEvent();
 	this->implementation->close(); 
-	return 0;
 	}
 
 }

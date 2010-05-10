@@ -18,6 +18,9 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+///<summary>
+/// This class represents a synchronized transaction in the Indexed Database API.
+///</summary>
 class TransactionSync : public Transaction
 {
 public:
@@ -26,16 +29,22 @@ public:
 
 	bool getIsActive() const { return isActive; }
 
-	virtual long abort();
-    virtual long commit();
+	// Not much to do here; transactions do one of two things...
+	virtual void abort();
+    virtual void commit();
+
+	// Forcably close this transaction (technically behavior is undefined, but we all know this will abort...)
 	void close();
 
 protected:
+	// Get the underlying implementation associated with this transaction (which is itself a TransactionContext)
 	virtual Implementation::TransactionContext getTransactionContext() const { return *implementation; }
 
 private:
+	// Own a reference to our underlying implementation
 	std::auto_ptr<Implementation::Transaction> implementation;
-	TransactionFactory transactionFactory;
+	// Maintain a transaction factory so we can initiate and manage transactions
+	//TransactionFactory transactionFactory;
 	bool isActive;
 
 	boost::mutex synchronization;

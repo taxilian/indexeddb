@@ -24,7 +24,6 @@ namespace API {
 
 TransactionSync::TransactionSync(DatabaseSync& database, TransactionFactory& transactionFactory, const ObjectStoreSyncList& objectStores, const optional<unsigned int>& timeout)
 	: Transaction(database, !objectStores.is_initialized() || (objectStores.is_initialized() && !objectStores->empty())),
-	  transactionFactory(transactionFactory),
 	  implementation(Implementation::AbstractDatabaseFactory::getInstance()
 		  .createTransaction(transactionFactory.getDatabaseContext(), mapObjectStoresToImplementations(objectStores), timeout, Implementation::TransactionContext())),
 	  isActive(true)
@@ -40,8 +39,7 @@ TransactionSync::~TransactionSync()
 	catch(ImplementationException&) { }
 	}
 
-//TODO change to void return
-long TransactionSync::abort()
+void TransactionSync::abort()
 	{ 
 	lock_guard<mutex> guard(synchronization);
 
@@ -56,12 +54,9 @@ long TransactionSync::abort()
 		}
 	else
 		throw DatabaseException("NON_TRANSIENT_ERR", DatabaseException::NON_TRANSIENT_ERR);
-
-	return 0; 
 	}
 
-//TODO change to void return
-long TransactionSync::commit()
+void TransactionSync::commit()
 	{ 
 	if(isActive)
 		{
@@ -74,7 +69,6 @@ long TransactionSync::commit()
 		}
 	else
 		throw DatabaseException("NON_TRANSIENT_ERR", DatabaseException::NON_TRANSIENT_ERR);
-	return 0; 
 	}
 
 void TransactionSync::close()

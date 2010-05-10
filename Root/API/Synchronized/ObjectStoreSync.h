@@ -26,7 +26,6 @@ namespace IndexedDB {
 namespace API { 
 
 class CursorSync;
-class IndexSync;
 class DatabaseSync;
 class KeyRange;
 
@@ -65,9 +64,13 @@ class ObjectStoreSync : public ObjectStore,
 		void removeIndex(const std::string& indexName);
 		void removeIndex(const Index& index) { removeIndex(index.getName()); }
 
+		// Many objects in the synchronized family need access to an object store's implementation; we expose it broadly
+		// instead of friending ~5 classes/methods.
 		Implementation::ObjectStore& getImplementation() const { return *implementation; }
 
+		// Get the names of the indexes associated with this object store
 		virtual StringVector getIndexNames() const;
+		// Get this object's key path (if any; undefined otherwise)
 		virtual FB::variant getKeyPath() const { 
 			return keyPath.is_initialized() ? keyPath.get() : FB::variant(); }
 
@@ -75,31 +78,44 @@ class ObjectStoreSync : public ObjectStore,
 		long nextKey;
 		bool autoIncrement;
 		boost::optional<std::string> keyPath;
+		// We maintain a set of indexes and cursors that have been opened under this object store
 		Support::Container<IndexSync> openIndexes;
 		Support::Container<CursorSync> openCursors;
 
+		// Some of our operations are not thread-safe, so we synchronize
 		boost::mutex synchronization;
 
 		FB::BrowserHost host;
+		// For object stores that automatically generate keys, this method does so
+		// TODO: This should be replaced by a key store
 		FB::variant generateKey(FB::variant value);
 
+		// This class receives messages that notify of committed and aborted transactions within the database scope
 		virtual void onTransactionAborted(const Transaction& transaction);
 		virtual void onTransactionCommitted(const Transaction& transaction);
 
 	private:
+		// We own a pointer to our implementation
 		const std::auto_ptr<Implementation::ObjectStore> implementation;
+		// We maintain a reference to the database's metabase
 		Metadata metadata;
+		// We need a transaction factory to get current transaction context and initiate new transactions
 		TransactionFactory transactionFactory;
 
+		// Internal operations to expose our functionality as weakly-typed methods to user agents
 		FB::JSOutObject openCursor(const FB::CatchAll& args);
 		FB::JSOutObject openIndex(const std::string& name);
 		FB::JSOutObject createIndex(const std::string name, const FB::CatchAll& args);
 
 		void initializeMethods();
+
+		// When an object store is opened or updated, we'll need to create/update the metadata associated therewith
 		void createMetadata(const boost::optional<std::string>& keyPath, const bool autoIncrement, Implementation::TransactionContext& transactionContext);
 		void loadMetadata(Implementation::TransactionContext& transactionContext);
 	};
 
+// This typedef represents an optional list of synchronized object stores.  It is used to translate
+// a set of object stores into implementations (see TransactionSync) during static transactions.
 typedef boost::optional<std::list<FB::AutoPtr<ObjectStoreSync>>> ObjectStoreSyncList;
 }
 }

@@ -21,11 +21,11 @@ Transaction::Transaction(Database& database, const bool isStatic)
 FB::JSOutObject Transaction::getDatabaseObject() 
 	{ return &database; }
 
-long Transaction::commit()
-	{ getDatabase().onTransactionCommitted(*this); return 0; }
+void Transaction::commit()
+	{ getDatabase().onTransactionCommitted(*this); }
 
-long Transaction::abort()
-	{ getDatabase().onTransactionAborted(*this); return 0; }
+void Transaction::abort()
+	{ getDatabase().onTransactionAborted(*this); }
 
 }
 }
