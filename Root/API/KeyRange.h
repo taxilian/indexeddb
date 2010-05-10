@@ -30,29 +30,40 @@ class KeyRange : public FB::JSAPIAuto
 		FB::variant getRight() const { return right; }
 		int getFlags() const { return flags; }
 
-		FB::JSOutObject only(FB::variant value);
-		FB::JSOutObject leftBound(FB::variant bound, const FB::CatchAll& args);
-		FB::JSOutObject rightBound(FB::variant bound, const FB::CatchAll& args);
-		FB::JSOutObject bound(FB::variant left, FB::variant right, const FB::CatchAll& args);
-
+		// Factory methods for KeyRange instances
+		// Create a range composed of exactly one key
+		FB::AutoPtr<KeyRange> only(FB::variant value);
+		// Create a range between (left, right) with optional open left/right ends
 		FB::AutoPtr<KeyRange> bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight);
+		// Create a key range between (left, +infinity) with optional open left
 		FB::AutoPtr<KeyRange> leftBound(FB::variant bound, const bool open);
+		// Create a key range between (-infinity, right) with optional open right
 		FB::AutoPtr<KeyRange> rightBound(FB::variant bound, const bool open);
 
 	private:
-		KeyRange(void);
+		// Private stub method to generate a KeyRange instance.  This instance is exposed to user
+		// agents to allow them to retreive constant values.
+		KeyRange();
 
 		FB::variant left;
 		FB::variant right;
 		const unsigned short flags;
 
 		void initializeMethods();
+
+		// Private methods to expose KeyRange constants to user agents
 		int getSingle() const { return SINGLE; }
 		int GetLeftOpen() const { return LEFT_OPEN; }
 		int GetRightOpen() const { return RIGHT_OPEN; }
 		int GetLeftBound() const { return LEFT_BOUND; }
 		int GetRightBound() const { return RIGHT_BOUND; }
 
+		// Private methods used to expose factory methods to user agents via FireBreath (these are weakly typed)
+		FB::JSOutObject leftBound(FB::variant bound, const FB::CatchAll& args);
+		FB::JSOutObject rightBound(FB::variant bound, const FB::CatchAll& args);
+		FB::JSOutObject bound(FB::variant left, FB::variant right, const FB::CatchAll& args);
+
+		// The plugin exposes a single stub so user agents can access the constants
 		friend FB::JSOutObject IndexedDatabasePluginAPI::getKeyRange();
 	};
 

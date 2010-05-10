@@ -87,7 +87,7 @@ FB::JSOutObject KeyRange::bound(FB::variant left, FB::variant right, const FB::C
 	return static_cast<FB::JSOutObject>(bound(left, right, openLeft, openRight));
 	}
 
-FB::JSOutObject KeyRange::only(FB::variant value)
+FB::AutoPtr<KeyRange> KeyRange::only(FB::variant value)
 	{ return new KeyRange(value, value, KeyRange::SINGLE); }
 
 FB::AutoPtr<KeyRange> KeyRange::leftBound(FB::variant bound, const bool open)

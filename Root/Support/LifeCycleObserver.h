@@ -15,6 +15,10 @@ namespace Support {
 template<class T>
 class LifeCycleObservable;
 
+///<summary>
+/// This interface represents a class capable of observing a LifeCycleObservable instance.  It requires
+/// implementation of the onClose handler.
+///</summary>
 template<class T>
 class LifeCycleObserver
 	{
