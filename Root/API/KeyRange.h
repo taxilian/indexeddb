@@ -32,13 +32,13 @@ class KeyRange : public FB::JSAPIAuto
 
 		// Factory methods for KeyRange instances
 		// Create a range composed of exactly one key
-		FB::AutoPtr<KeyRange> only(FB::variant value);
+		boost::shared_ptr<KeyRange> only(FB::variant value);
 		// Create a range between (left, right) with optional open left/right ends
-		FB::AutoPtr<KeyRange> bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight);
+		boost::shared_ptr<KeyRange> bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight);
 		// Create a key range between (left, +infinity) with optional open left
-		FB::AutoPtr<KeyRange> leftBound(FB::variant bound, const bool open);
+		boost::shared_ptr<KeyRange> leftBound(FB::variant bound, const bool open);
 		// Create a key range between (-infinity, right) with optional open right
-		FB::AutoPtr<KeyRange> rightBound(FB::variant bound, const bool open);
+		boost::shared_ptr<KeyRange> rightBound(FB::variant bound, const bool open);
 
 	private:
 		// Private stub method to generate a KeyRange instance.  This instance is exposed to user
@@ -59,12 +59,12 @@ class KeyRange : public FB::JSAPIAuto
 		int GetRightBound() const { return RIGHT_BOUND; }
 
 		// Private methods used to expose factory methods to user agents via FireBreath (these are weakly typed)
-		FB::JSOutObject leftBound(FB::variant bound, const FB::CatchAll& args);
-		FB::JSOutObject rightBound(FB::variant bound, const FB::CatchAll& args);
-		FB::JSOutObject bound(FB::variant left, FB::variant right, const FB::CatchAll& args);
+		FB::JSAPIPtr leftBound(FB::variant bound, const FB::CatchAll& args);
+		FB::JSAPIPtr rightBound(FB::variant bound, const FB::CatchAll& args);
+		FB::JSAPIPtr bound(FB::variant left, FB::variant right, const FB::CatchAll& args);
 
 		// The plugin exposes a single stub so user agents can access the constants
-		friend FB::JSOutObject IndexedDatabasePluginAPI::getKeyRange();
+		friend FB::JSAPIPtr IndexedDatabasePluginAPI::getKeyRange();
 	};
 
 }

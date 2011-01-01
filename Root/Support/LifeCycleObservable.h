@@ -8,6 +8,7 @@ GNU Lesser General Public License
 #define BRANDONHAYNES_INDEXEDDB_SUPPORT_LIFECYCLEOBSERVABLE_H
 
 #include <list>
+#include <boost/enable_shared_from_this.hpp>
 #include "LifeCycleObserver.h"
 #include "Container.h"
 
@@ -16,6 +17,7 @@ namespace IndexedDB {
 namespace API { 
 
 class Transaction;
+typedef boost::shared_ptr<Transaction> TransactionPtr;
 
 namespace Support {
 
@@ -26,44 +28,51 @@ namespace Support {
 /// TODO: Pretty sure we can refactor out the transactional methods here; there's no need to chain these
 ///</summary>
 template<class T>
-class LifeCycleObservable
+class LifeCycleObservable : boost::enable_shared_from_this<LifeCycleObservable<T> >
 	{
 	public:
+        typedef boost::shared_ptr<LifeCycleObservable<T> > LifeCycleObservablePtr;
+        typedef boost::shared_ptr<LifeCycleObserver<T> > LifeCycleObserverPtr;
+        typedef boost::weak_ptr<LifeCycleObserver<T> > LifeCycleObserverWeakPtr;
 		// Add a new observer to this observable class
-		void addLifeCycleObserver(LifeCycleObserver<T>* const observer)
+		void addLifeCycleObserver(const LifeCycleObserverPtr& observer)
 			{ observers.push_back(observer); }
 
 		// Remove an observer from this observable class
-		void removeLifeCycleObserver(LifeCycleObserver<T>* const observer)
+		void removeLifeCycleObserver(const LifeCycleObserverPtr& observer)
 			{ observers.remove(observer);}
 
 	protected:
 		// These methods are executed when the derived class wishes to fire the transaction event
-		virtual void onTransactionCommitted(const Transaction& transaction) = 0;
-		virtual void onTransactionAborted(const Transaction& transaction) = 0;
+		virtual void onTransactionCommitted(const TransactionPtr& transaction) = 0;
+		virtual void onTransactionAborted(const TransactionPtr& transaction) = 0;
 
 		// This method is called when the derived class is about to close; it notifies all 
 		// observers of this fact
 		void raiseOnCloseEvent()
 			{ 
-			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(static_cast<T*>(this))); 
+			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(shared_from_this())); 
 			observers.clear();
 			}
 
 	private:
 		// A list of our current observers
-		// Would have prefered for these to be weak pointers, but there's no FireBreath compatible option here
-		std::list<LifeCycleObserver<T>*> observers;
+		std::list<LifeCycleObserverWeakPtr> observers;
 
 		// Functor that calls the onClose event on a given observer
 		struct ExecuteCloseFunctor
 			{
-			T* const observable;
-			ExecuteCloseFunctor(T* const observable) 
+			LifeCycleObservablePtr observable;
+			ExecuteCloseFunctor(const LifeCycleObservablePtr& observable) 
 				: observable(observable) { }
 
-			void operator ()(LifeCycleObserver<T>* const observer) 
-				{ observer->onClose(observable); }
+			void operator ()(const LifeCycleObserverWeakPtr& observer) 
+			    {
+                if (LifeCycleObserverPtr p(observer.lock()))
+                    {
+                    p->onClose(observable);
+                    }
+                }
 			};
 
 		friend class Support::Container<T>;

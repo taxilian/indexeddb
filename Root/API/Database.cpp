@@ -21,6 +21,16 @@ Database::Database(const std::string& name, const std::string& description)
 	registerProperty("currentTransaction", make_property(this, &Database::getCurrentTransactionVariant));
 	}
 
+std::string Database::getName() const
+{
+    return name;
+}
+
+std::string Database::getDescription() const
+{
+    return description;
+}
+
 }
 }
 }

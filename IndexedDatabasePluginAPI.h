@@ -14,15 +14,15 @@
 class IndexedDatabasePluginAPI : public BrandonHaynes::IndexedDB::API::EnvironmentSync
 {
 public:
-    IndexedDatabasePluginAPI(FB::BrowserHost host);
+    IndexedDatabasePluginAPI(FB::BrowserHostPtr host);
 
 	// Expose a stub keyrange for access to constants
-	FB::JSOutObject getKeyRange();
+	FB::JSAPIPtr getKeyRange();
 	// Expose a stub cursor for access to constants
-	FB::JSOutObject getCursor();
+	FB::JSAPIPtr getCursor();
 
 private:
-	FB::BrowserHost host;
+	FB::BrowserHostPtr host;
 };
 
 #endif

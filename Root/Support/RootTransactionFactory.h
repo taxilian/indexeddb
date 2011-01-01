@@ -14,6 +14,7 @@ namespace IndexedDB {
 namespace API { 
 
 	class DatabaseSync;
+    typedef boost::shared_ptr<DatabaseSync> DatabaseSyncPtr;
 	class Implementation::Database;
 
 	///<summary>
@@ -30,12 +31,12 @@ namespace API {
 				{ return implementation; }
 
 			// Associate a new transaction factory with the given database and underlying implementation
-			RootTransactionFactory(DatabaseSync& database, Implementation::Database& implementation) 
-				: database(database), implementation(implementation), TransactionFactory()
+			RootTransactionFactory(Implementation::Database& implementation) 
+				: implementation(implementation), TransactionFactory()
 				{ }
-
+            void setDatabaseSync( const DatabaseSyncPtr& ptr );
 		private:
-			DatabaseSync& database;
+			DatabaseSyncPtr database;
 			Implementation::Database& implementation;
 		};
 	}

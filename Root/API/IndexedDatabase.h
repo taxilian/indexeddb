@@ -21,12 +21,12 @@ namespace API {
 class IndexedDatabase : public FB::JSAPIAuto
 {
 public:
-	IndexedDatabase(FB::BrowserHost host);
+	IndexedDatabase(FB::BrowserHostPtr host);
 
-	FB::JSOutObject open(const std::string& name, const std::string& description, const FB::CatchAll& args);
+	FB::JSAPIPtr open(const std::string& name, const std::string& description, const FB::CatchAll& args);
 
 protected:
-	FB::BrowserHost host;
+	FB::BrowserHostPtr host;
 };
 
 }

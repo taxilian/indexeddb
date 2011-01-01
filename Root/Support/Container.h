@@ -9,128 +9,147 @@ GNU Lesser General Public License
 
 #include <list>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "LifeCycleObserver.h"
 
 using boost::mutex;
 using boost::lock_guard;
 
 namespace BrandonHaynes {
-namespace IndexedDB { 
-namespace API { 
+    namespace IndexedDB { 
+        namespace API { 
 
-class Transaction;
+            class Transaction;
 
-namespace Support {
+            namespace Support {
 
-template<class T>
-class Container : LifeCycleObserver<T>
-	{
-	public:
-			void add(T* const child) 
-				{ 
-				lock_guard<mutex> guard(synchronization);
-				children.push_back(child); 
-				child->addLifeCycleObserver(this);
-				}
+                template<class T>
+                class Container : LifeCycleObserver<T>
+                {
+                public:
+                    typedef boost::shared_ptr<LifeCycleObserver<T> > LifeCycleObserverPtr;
+                    void add(const boost::weak_ptr<T>& child) 
+                    { 
+                        lock_guard<mutex> guard(synchronization);
+                        children.push_back(child); 
+                        child->addLifeCycleObserver(shared_from_this());
+                    }
 
-			template<class Predicate>
-			void remove(Predicate& predicate) 
-				{ 
-				lock_guard<mutex> guard(synchronization);
-				children.remove_if(predicate); 
-				}
-			
-			void remove(T* const element) 
-				{
-				lock_guard<mutex> guard(synchronization);
-				entity->removeLifeCycleObserver(this);
-				entity->close();
-				children.remove(element); 
-				}
+                    template<class Predicate>
+                    void remove(const Predicate& predicate) 
+                    { 
+                        lock_guard<mutex> guard(synchronization);
+                        children.remove_if(predicate); 
+                    }
 
-			void remove(const std::string& name) 
-				{ remove(RemovalFunctor(this, name)); }
+                    void remove(const boost::weak_ptr<T>& element) 
+                    {
+                        lock_guard<mutex> guard(synchronization);
+                        entity->removeLifeCycleObserver(shared_from_this);
+                        entity->close();
+                        children.remove(element); 
+                    }
 
-			void release()
-				{ 
-				lock_guard<mutex> guard(synchronization);
-				for_each(children.begin(), children.end(), CloseFunctor(this));
-				children.clear(); 
-				}
+                    void remove(const std::string& name) 
+                    { remove(RemovalFunctor(shared_from_this(), name)); }
 
-			virtual void raiseTransactionCommitted(const Transaction& transaction)
-				{ for_each(children.begin(), children.end(), CommitFunctor(transaction)); }
-			virtual void raiseTransactionAborted(const Transaction& transaction)
-				{ for_each(children.begin(), children.end(), AbortFunctor(transaction)); }
+                    void release()
+                    { 
+                        lock_guard<mutex> guard(synchronization);
+                        for_each(children.begin(), children.end(), CloseFunctor(shared_from_this()));
+                        children.clear(); 
+                    }
 
-	private:
-		std::list<T* const> children;
+                    virtual void raiseTransactionCommitted(const TransactionPtr& transaction)
+                    { for_each(children.begin(), children.end(), CommitFunctor(transaction)); }
+                    virtual void raiseTransactionAborted(const TransactionPtr& transaction)
+                    { for_each(children.begin(), children.end(), AbortFunctor(transaction)); }
 
-		virtual void onClose(T* const entity)
-			{ 
-			children.remove(entity); 
-			}
+                private:
+                    std::list<boost::weak_ptr<T> > children;
 
-		struct RemovalFunctor : public std::unary_function<T* const, bool>
-			{
-			const std::string& name;
-			LifeCycleObserver<T>* const observer;
+                    struct removeWeakPtr : public std::unary_function<boost::weak_ptr<T>, bool>
+                    {
+                        removeWeakPtr(const boost::weak_ptr<T>& ptr) : inner(ptr) { }
 
-			RemovalFunctor(LifeCycleObserver<T>* const observer, const std::string& name): 
-				observer(observer), name(name) { }
+                        boost::weak_ptr<T> inner;
+                        bool operator()(const boost::weak_ptr<T>& b) {
+                            return inner.lock() == b.lock();
+                        }
+                    };
 
-			bool operator ()(T* const entity)
-				{ if(name == entity->getName()) { 
-					entity->removeLifeCycleObserver(observer);
-					entity->close(); 
-					return true; 
-				}
-				  else return false; }
-			};
+                    virtual void onClose(const boost::weak_ptr<T>& entity)
+                    { 
+                        children.remove_if(removeWeakPtr(entity)); 
+                    }
 
-		struct CloseFunctor
-			{
-			LifeCycleObserver<T>* const observer;
+                    struct RemovalFunctor : public std::unary_function<boost::weak_ptr<T>, bool>
+                    {
+                        const std::string& name;
+                        LifeCycleObserverPtr observer;
 
-			CloseFunctor(LifeCycleObserver<T>* const observer) 
-				: observer(observer) { }
-			
-			void operator ()(T* const entity) 
-				{ 
-				entity->removeLifeCycleObserver(observer);
-				entity->close(); 
-				}
-			};
+                        RemovalFunctor(const LifeCycleObserverPtr& observer, const std::string& name): 
+                        observer(observer), name(name) { }
 
-		struct CommitFunctor
-			{
-			const Transaction& transaction;
+                        bool operator ()(const boost::weak_ptr<T>& en)
+                        {
+                            boost::shared_ptr entity(en.lock());
+                            if(entity && name == entity->getName()) { 
+                                entity->removeLifeCycleObserver(observer);
+                                entity->close(); 
+                                return true; 
+                            } else if (!entity) {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                    };
 
-			CommitFunctor(const Transaction& transaction) 
-				: transaction(transaction) { }
-			
-			void operator ()(LifeCycleObservable<T>* const entity) 
-				{ entity->onTransactionCommitted(transaction); }
-			};
+                    struct CloseFunctor
+                    {
+                        LifeCycleObserverPtr const observer;
 
-		struct AbortFunctor
-			{
-			const Transaction& transaction;
+                        CloseFunctor(const LifeCycleObserverPtr& observer) 
+                            : observer(observer) { }
 
-			AbortFunctor(const Transaction& transaction) 
-				: transaction(transaction) { }
-			
-			void operator ()(LifeCycleObservable<T>* const entity) 
-				{ entity->onTransactionAborted(transaction); }
-			};
+                        void operator ()(const LifeCycleObserverPtr& entity) 
+                        { 
+                            entity->removeLifeCycleObserver(observer);
+                            entity->close(); 
+                        }
+                    };
 
-	private:
-		boost::mutex synchronization;
-	};
+                    struct CommitFunctor
+                    {
+                        const TransactionPtr transaction;
 
-}
-}
-}
+                        CommitFunctor(const TransactionPtr& transaction) 
+                            : transaction(transaction) { }
+
+                        void operator ()(const LifeCycleObserverPtr& const entity) 
+                        { entity->onTransactionCommitted(transaction); }
+                    };
+
+                    struct AbortFunctor
+                    {
+                        const TransactionPtr transaction;
+
+                        AbortFunctor(const TransactionPtr& transaction) 
+                            : transaction(transaction) { }
+
+                        void operator ()(const LifeCycleObserverPtr& entity) 
+                        { entity->onTransactionAborted(transaction); }
+                    };
+
+                private:
+                    boost::mutex synchronization;
+                };
+
+            }
+        }
+    }
 }
 
 #endif

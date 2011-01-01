@@ -23,8 +23,8 @@ public:
 	enum Direction { NEXT = 0, NEXT_NO_DUPLICATE = 1, PREV = 2, PREV_NO_DUPLICATE = 3 };
 
 	// Returns a stub instance of this interface so clients may access the direction enum
-	static const FB::AutoPtr<Cursor> getInstance()
-		{ return FB::AutoPtr<Cursor>(new Cursor()); }
+	static const boost::shared_ptr<Cursor> getInstance()
+		{ return boost::shared_ptr<Cursor>(new Cursor()); }
 
 	// Gets the direction associated with this cursor
 	Cursor::Direction getDirection() { return direction; }

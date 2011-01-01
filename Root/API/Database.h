@@ -20,6 +20,7 @@ namespace IndexedDB {
 	namespace API 
 		{ 
 		class Transaction;
+        typedef boost::shared_ptr<Transaction> TransactionPtr;
 
 		///<summary>
 		/// This class represents a database in the Indexed Database API implementation.
@@ -28,14 +29,14 @@ namespace IndexedDB {
 		{
 		public:
 			// Gets the name associated with this database
-			std::string getName() const { return name; }
+			std::string getName() const;
 			// Gets the database associated with this database
-			std::string getDescription() const { return description; }
+			std::string getDescription() const;
 			// Get this database's version
 			virtual boost::optional<std::string> getVersion() const = 0;
 
 			// Gets the current transaction associated with this database, if any
-			virtual boost::optional<Transaction&> getCurrentTransaction() const = 0;
+			virtual boost::optional<TransactionPtr> getCurrentTransaction() const = 0;
 
 			// Get the set of object store names associated with this database
 			virtual std::vector<std::string> getObjectStoreNames() = 0;
@@ -52,8 +53,8 @@ namespace IndexedDB {
 			virtual FB::variant getCurrentTransactionVariant() const = 0;
 
 			// Methods by which a Transaction instance notifies its parent database that it has committed or aborted
-			virtual void onTransactionCommitted(const Transaction& transaction) = 0;
-			virtual void onTransactionAborted(const Transaction& transaction) = 0;
+			virtual void onTransactionCommitted(const TransactionPtr& transaction) = 0;
+			virtual void onTransactionAborted(const TransactionPtr& transaction) = 0;
 
 		private:	
 			const std::string name;

@@ -24,7 +24,7 @@ namespace API {
 class TransactionSync : public Transaction
 {
 public:
-	TransactionSync(DatabaseSync& database, TransactionFactory& transactionFactory, const ObjectStoreSyncList& objectStores, const boost::optional<unsigned int>& timeout);
+	TransactionSync(const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, const ObjectStoreSyncList& objectStores, const boost::optional<unsigned int>& timeout);
 	~TransactionSync();
 
 	bool getIsActive() const { return isActive; }
@@ -57,7 +57,7 @@ private:
 		MapObjectStoreToImplementationFunctor(Implementation::ObjectStoreImplementationList& objectStoreImplementations) 
 			: objectStoreImplementations(objectStoreImplementations)
 			{ if(!objectStoreImplementations.is_initialized()) objectStoreImplementations = std::list<Implementation::ObjectStore*>(); }
-		void operator()(const FB::AutoPtr<ObjectStoreSync>& objectStore)
+		void operator()(const boost::shared_ptr<ObjectStoreSync>& objectStore)
 			{ objectStoreImplementations.get().push_back(&objectStore->getImplementation()); }
 
 		Implementation::ObjectStoreImplementationList& objectStoreImplementations;

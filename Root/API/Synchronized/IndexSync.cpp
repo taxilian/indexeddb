@@ -28,7 +28,7 @@ using Implementation::Data;
 
 namespace API { 
 
-IndexSync::IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name)
+IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name)
 	: Index(name, objectStore.getName()), 
 	  transactionFactory(transactionFactory),
 	  metadata(metadata, Metadata::Index, name),
@@ -47,7 +47,7 @@ IndexSync::IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, Transac
 	initializeMethods();
 	}
 
-IndexSync::IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name, const optional<string>& keyPath, const bool unique)
+IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name, const optional<string>& keyPath, const bool unique)
 	: Index(name, objectStore.getName(), keyPath, unique), 
 	  transactionFactory(transactionFactory),
 	  host(host),
@@ -74,8 +74,8 @@ void IndexSync::initializeMethods()
 	registerMethod("getObject", make_method(this, &IndexSync::getObject));
 	registerMethod("put", make_method(this, &IndexSync::put));
 	registerMethod("remove", make_method(this, &IndexSync::remove));
-	registerMethod("openCursor", make_method(this, static_cast<FB::JSOutObject (IndexSync::*)(const FB::CatchAll &)>(&IndexSync::openCursor))); 
-	registerMethod("openObjectCursor", make_method(this, static_cast<FB::JSOutObject (IndexSync::*)(const FB::CatchAll &)>(&IndexSync::openObjectCursor))); 
+	registerMethod("openCursor", make_method(this, static_cast<FB::JSAPIPtr (IndexSync::*)(const FB::CatchAll &)>(&IndexSync::openCursor))); 
+	registerMethod("openObjectCursor", make_method(this, static_cast<FB::JSAPIPtr (IndexSync::*)(const FB::CatchAll &)>(&IndexSync::openObjectCursor))); 
 	}
 
 FB::variant IndexSync::get(FB::variant key)
@@ -147,7 +147,7 @@ void IndexSync::close()
 	this->implementation->close(); 
 	}
 
-FB::JSOutObject IndexSync::openCursor(const FB::CatchAll& args)
+FB::JSAPIPtr IndexSync::openCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
@@ -170,10 +170,10 @@ FB::JSOutObject IndexSync::openCursor(const FB::CatchAll& args)
 		: optional<KeyRange>();
 	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
 
-	return static_cast<FB::JSOutObject>(openCursor(range, direction, true));
+	return static_cast<FB::JSAPIPtr>(openCursor(range, direction, true));
 	}
 
-FB::JSOutObject IndexSync::openObjectCursor(const FB::CatchAll& args)
+FB::JSAPIPtr IndexSync::openObjectCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
@@ -196,14 +196,14 @@ FB::JSOutObject IndexSync::openObjectCursor(const FB::CatchAll& args)
 		: optional<KeyRange>();
 	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
 
-	return static_cast<FB::JSOutObject>(openCursor(range, direction, false));
+	return static_cast<FB::JSAPIPtr>(openCursor(range, direction, false));
 	}
 
-FB::AutoPtr<CursorSync> IndexSync::openCursor(const optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys)
+boost::shared_ptr<CursorSync> IndexSync::openCursor(const optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys)
 	{ 
 	try
 		{ 
-		FB::AutoPtr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction, dataArePrimaryKeys); 
+		boost::shared_ptr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction, dataArePrimaryKeys); 
 		openCursors.add(cursor);
 		return cursor;
 		}

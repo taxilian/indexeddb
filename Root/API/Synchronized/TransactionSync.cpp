@@ -22,7 +22,7 @@ using Implementation::ImplementationException;
 
 namespace API { 
 
-TransactionSync::TransactionSync(DatabaseSync& database, TransactionFactory& transactionFactory, const ObjectStoreSyncList& objectStores, const optional<unsigned int>& timeout)
+TransactionSync::TransactionSync(const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, const ObjectStoreSyncList& objectStores, const optional<unsigned int>& timeout)
 	: Transaction(database, !objectStores.is_initialized() || (objectStores.is_initialized() && !objectStores->empty())),
 	  implementation(Implementation::AbstractDatabaseFactory::getInstance()
 		  .createTransaction(transactionFactory.getDatabaseContext(), mapObjectStoresToImplementations(objectStores), timeout, Implementation::TransactionContext())),

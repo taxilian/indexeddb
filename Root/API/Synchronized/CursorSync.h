@@ -28,9 +28,9 @@ class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync
 	{
 	public:
 		// This constructor creates a cursor over the given object store
-		CursorSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction);
+		CursorSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction);
 		// This constructor creates a cursor over the given index
-		CursorSync(FB::BrowserHost host, IndexSync& index, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys);
+		CursorSync(FB::BrowserHostPtr host, IndexSync& index, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys);
 		virtual ~CursorSync(void);
 
 		// Gets the key associated with the current cursor position
@@ -56,7 +56,7 @@ class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync
 		// The underlying implementation for this cursor
 		const std::auto_ptr<Implementation::Cursor> implementation;
 		// We need a reference to the browser for JSON encoding
-		FB::BrowserHost host;
+		FB::BrowserHostPtr host;
 		// Hold a reference to a factory for transactions (including for our current context)
 		TransactionFactory transactionFactory;
 

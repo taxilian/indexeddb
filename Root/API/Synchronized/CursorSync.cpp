@@ -23,7 +23,7 @@ using Implementation::ImplementationException;
 
 namespace API { 
 
-CursorSync::CursorSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction)
+CursorSync::CursorSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction)
 	: Cursor(direction), 
 	  transactionFactory(transactionFactory),
 	  readOnly(objectStore.getMode() != Implementation::ObjectStore::READ_WRITE),
@@ -41,7 +41,7 @@ CursorSync::CursorSync(FB::BrowserHost host, ObjectStoreSync& objectStore, Trans
 	initializeMethods();
 	}
 
-CursorSync::CursorSync(FB::BrowserHost host, IndexSync& index, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys)
+CursorSync::CursorSync(FB::BrowserHostPtr host, IndexSync& index, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys)
 	: Cursor(direction), readOnly(false),
 	  transactionFactory(transactionFactory),
 	  host(host), range(range),

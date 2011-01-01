@@ -11,8 +11,7 @@ GNU Lesser General Public License
 #include <list>
 #include <boost/optional.hpp>
 #include <boost/thread/mutex.hpp>
-#include <AutoPtr.h>
-#include <BrowserHostWrapper.h>
+#include <BrowserHost.h>
 #include "IndexSync.h"
 #include "CursorSync.h"
 #include "../ObjectStore.h"
@@ -27,20 +26,23 @@ namespace API {
 
 class CursorSync;
 class DatabaseSync;
+typedef boost::shared_ptr<DatabaseSync> DatabaseSyncPtr;
 class KeyRange;
 
 ///<summary>
 /// This class represents a synchronized object store per the Indexed Database API draft
 ///</summary>
-class ObjectStoreSync : public ObjectStore,
-						public Support::LifeCycleObservable<ObjectStoreSync>
+class ObjectStoreSync : public ObjectStore
 	{
+    protected:
+        boost::shared_ptr<Support::LifeCycleObservable<ObjectStoreSync> > _observable;
+
 	public:
 		// Create an object store, with or without a key path
-		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const std::string& keyPath, const bool autoIncrement);
-		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const bool autoIncrement);
+		ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const std::string& keyPath, const bool autoIncrement);
+		ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const bool autoIncrement);
 		// Open an object store in the given mode
-		ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const Implementation::ObjectStore::Mode mode);
+		ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const Implementation::ObjectStore::Mode mode);
 		// TODO: The subtle differences in constructors will be confusing to subsequent developers; change to static factory methods and make these protected
 		
 		~ObjectStoreSync(void);
@@ -56,10 +58,10 @@ class ObjectStoreSync : public ObjectStore,
 		void remove(FB::variant key);
 
 		// Open a new cursor over this object store, bounded by the given range
-		FB::AutoPtr<CursorSync> openCursor(const boost::optional<KeyRange> range, const Cursor::Direction direction);
+		boost::shared_ptr<CursorSync> openCursor(const boost::optional<KeyRange> range, const Cursor::Direction direction);
 
 		// Create a new index over this object store
-		FB::AutoPtr<IndexSync> createIndex(const std::string name, const boost::optional<std::string> keyPath, const bool unique); //raises (DatabaseException);
+		boost::shared_ptr<IndexSync> createIndex(const std::string name, const boost::optional<std::string> keyPath, const bool unique); //raises (DatabaseException);
 		// Remove an existing index from the object store
 		void removeIndex(const std::string& indexName);
 		void removeIndex(const Index& index) { removeIndex(index.getName()); }
@@ -85,11 +87,17 @@ class ObjectStoreSync : public ObjectStore,
 		// Some of our operations are not thread-safe, so we synchronize
 		boost::mutex synchronization;
 
-		FB::BrowserHost host;
+		FB::BrowserHostPtr host;
 		// For object stores that automatically generate keys, this method does so
 		// TODO: This should be replaced by a key store
 		FB::variant generateKey(FB::variant value);
 
+    public:
+        typedef boost::shared_ptr<LifeCycleObserver<ObjectStoreSync> > LifeCycleObserverPtr;
+        // Forwarding methods for the embedded Observable
+		void addLifeCycleObserver(const LifeCycleObserverPtr& observer);
+		void removeLifeCycleObserver(const LifeCycleObserverPtr& observer);
+			{ observers.remove(observer);}
 		// This class receives messages that notify of committed and aborted transactions within the database scope
 		virtual void onTransactionAborted(const Transaction& transaction);
 		virtual void onTransactionCommitted(const Transaction& transaction);
@@ -103,9 +111,9 @@ class ObjectStoreSync : public ObjectStore,
 		TransactionFactory transactionFactory;
 
 		// Internal operations to expose our functionality as weakly-typed methods to user agents
-		FB::JSOutObject openCursor(const FB::CatchAll& args);
-		FB::JSOutObject openIndex(const std::string& name);
-		FB::JSOutObject createIndex(const std::string name, const FB::CatchAll& args);
+		FB::JSAPIPtr openCursor(const FB::CatchAll& args);
+		FB::JSAPIPtr openIndex(const std::string& name);
+		FB::JSAPIPtr createIndex(const std::string name, const FB::CatchAll& args);
 
 		void initializeMethods();
 
@@ -116,7 +124,7 @@ class ObjectStoreSync : public ObjectStore,
 
 // This typedef represents an optional list of synchronized object stores.  It is used to translate
 // a set of object stores into implementations (see TransactionSync) during static transactions.
-typedef boost::optional<std::list<FB::AutoPtr<ObjectStoreSync>>> ObjectStoreSyncList;
+typedef boost::optional<std::list<boost::shared_ptr<ObjectStoreSync>>> ObjectStoreSyncList;
 }
 }
 }

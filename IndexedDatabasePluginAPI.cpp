@@ -2,7 +2,7 @@
 #include "Root/API/KeyRange.h"
 #include "Root/API/Cursor.h"
 
-IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHost host) 
+IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHostPtr host) 
 	: host(host), EnvironmentSync(host)
 	{
     registerProperty("indexedDB", make_property(this, &IndexedDatabasePluginAPI::getIndexedDB));
@@ -10,8 +10,8 @@ IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHost host)
     registerProperty("IDBCursor", make_property(this,&IndexedDatabasePluginAPI::getCursor));
 	}
 
-FB::JSOutObject IndexedDatabasePluginAPI::getKeyRange()
+FB::JSAPIPtr IndexedDatabasePluginAPI::getKeyRange()
 	{ return new BrandonHaynes::IndexedDB::API::KeyRange(); }
 
-FB::JSOutObject IndexedDatabasePluginAPI::getCursor()
-	{ return static_cast<FB::JSOutObject>(BrandonHaynes::IndexedDB::API::Cursor::getInstance()); }
+FB::JSAPIPtr IndexedDatabasePluginAPI::getCursor()
+	{ return static_cast<FB::JSAPIPtr>(BrandonHaynes::IndexedDB::API::Cursor::getInstance()); }

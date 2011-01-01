@@ -1,4 +1,4 @@
-/**********************************************************\ 
+/**********************************************************\
   Default auto-generated np_winmain.cpp
 
   This file contains the entrypoints for a windows NPAPI
@@ -6,7 +6,7 @@
   doing!
 \**********************************************************/
 
-#include "Win/win_common.h"
+#include "win_common.h"
 
 #include "NpapiTypes.h"
 #include "NpapiPluginModule.h"
@@ -40,5 +40,6 @@ NPError OSCALL NP_Initialize(NPNetscapeFuncs* pFuncs)
 NPError OSCALL NP_Shutdown()
 {
     delete module;
+    module = NULL;
     return NPERR_NO_ERROR;
 }

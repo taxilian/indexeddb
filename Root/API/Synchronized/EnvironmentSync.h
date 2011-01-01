@@ -21,13 +21,13 @@ namespace API {
 class EnvironmentSync : public FB::JSAPIAuto
 {
 public:
-	EnvironmentSync(FB::BrowserHost host);
+	EnvironmentSync(FB::BrowserHostPtr host);
 
 	// Per spec, returns a reference to the IndexedDB API handle
-	FB::JSOutObject getIndexedDB();
+	FB::JSAPIPtr getIndexedDB();
 
 private:
-	FB::AutoPtr<IndexedDatabase> indexedDB;
+	boost::shared_ptr<IndexedDatabase> indexedDB;
 };
 
 }

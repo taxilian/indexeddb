@@ -11,12 +11,12 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-EnvironmentSync::EnvironmentSync(FB::BrowserHost host)
+EnvironmentSync::EnvironmentSync(FB::BrowserHostPtr host)
 	: indexedDB(new IndexedDatabase(host))
 	{ }
 
-FB::JSOutObject EnvironmentSync::getIndexedDB()
-	{ return static_cast<FB::JSOutObject>(indexedDB); }
+FB::JSAPIPtr EnvironmentSync::getIndexedDB()
+	{ return static_cast<FB::JSAPIPtr>(indexedDB); }
 
 }
 }

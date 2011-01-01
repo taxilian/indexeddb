@@ -36,7 +36,7 @@ IndexedDatabasePlugin::~IndexedDatabasePlugin()
 FB::JSAPI* IndexedDatabasePlugin::createJSAPI()
 {
     // m_host is the BrowserHostWrapper
-    return new IndexedDatabasePluginAPI(m_host);
+    return boost::make_shared<IndexedDatabasePluginAPI>(m_host);
 }
 
 bool IndexedDatabasePlugin::onMouseDown(FB::MouseDownEvent *evt, FB::PluginWindow*)

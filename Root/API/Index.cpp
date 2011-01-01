@@ -29,6 +29,21 @@ void Index::initializeMethods()
 	registerProperty("unique", make_property(this, &Index::getUnique));
 	}
 
+const std::string Index::getName() const
+{
+    return indexName;
+}
+
+boost::optional<std::string> Index::getKeyPath() const
+{
+    return keyPath;
+}
+
+const std::string Index::getObjectStoreName() const
+{
+    return objectStoreName;
+}
+
 }
 }
 }

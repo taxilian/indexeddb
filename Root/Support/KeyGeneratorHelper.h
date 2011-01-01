@@ -19,7 +19,7 @@ namespace Support {
 class KeyGeneratorHelper : public Implementation::KeyGenerator
 	{
 	public:
-		KeyGeneratorHelper(FB::BrowserHost host, const std::string& keyPath)
+		KeyGeneratorHelper(FB::BrowserHostPtr host, const std::string& keyPath)
 			: keyPath(keyPath), host(host)
 			{ }
 
@@ -27,7 +27,7 @@ class KeyGeneratorHelper : public Implementation::KeyGenerator
 		const FB::variant generateKey(FB::variant value) const;
 
 	private:
-		FB::BrowserHost host;
+		FB::BrowserHostPtr host;
 		std::string keyPath;	
 	};
 

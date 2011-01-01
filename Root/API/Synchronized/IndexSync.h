@@ -30,8 +30,8 @@ class CursorSync;
 class IndexSync : public Index, public Support::LifeCycleObservable<IndexSync>
 {
 public:
-	IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name);
-	IndexSync(FB::BrowserHost host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name, const boost::optional<std::string>& keyPath, const bool unique);
+	IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name);
+	IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name, const boost::optional<std::string>& keyPath, const bool unique);
 	~IndexSync(void);
 
 	// Get the primary key associated with the given secondary key in the index
@@ -46,7 +46,7 @@ public:
 	void close();
 
 	// Open a cursor over this index
-	FB::AutoPtr<CursorSync> openCursor(const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys);
+	boost::shared_ptr<CursorSync> openCursor(const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys);
 
 protected:
 	// We maintain a set of opened cursors; these must be forcably closed prior to closing the index
@@ -57,7 +57,7 @@ protected:
 	virtual void onTransactionCommitted(const Transaction& transaction);
 
 private:
-	FB::BrowserHost host;
+	FB::BrowserHostPtr host;
 	// We own a key generator for this index
 	std::auto_ptr<Implementation::KeyGenerator> keyGenerator;
 	// We own an underlying implementation for this index
@@ -68,8 +68,8 @@ private:
 	TransactionFactory transactionFactory;
 
 	// Methods to interact between the user agent and this class; it interprets the args and calls the strongly typed overloads
-	FB::JSOutObject openCursor(const FB::CatchAll& args);
-	FB::JSOutObject openObjectCursor(const FB::CatchAll& args);
+	FB::JSAPIPtr openCursor(const FB::CatchAll& args);
+	FB::JSAPIPtr openObjectCursor(const FB::CatchAll& args);
 
 	void initializeMethods();
 

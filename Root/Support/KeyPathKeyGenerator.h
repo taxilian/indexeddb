@@ -25,7 +25,7 @@ namespace Support {
 class KeyPathKeyGenerator : public Implementation::KeyGenerator
 	{
 	public:
-		KeyPathKeyGenerator(FB::BrowserHost host, const std::string& keyPath)
+		KeyPathKeyGenerator(FB::BrowserHostPtr host, const std::string& keyPath)
 			: keyPath(keyPath), host(host)
 			{ }
 
@@ -33,10 +33,10 @@ class KeyPathKeyGenerator : public Implementation::KeyGenerator
 		// Generate a key using the key path for the given variant if the variant is of type JSObject (ECMA undefined otherwise)
 		const FB::variant generateKey(FB::variant value) const;
 		// Generate a key using the key path as a property lookup in the JSObject argument
-		const FB::variant generateKey(FB::JSObject object) const;
+		const FB::variant generateKey(FB::JSObjectPtr object) const;
 
 	private:
-		FB::BrowserHost host;
+		FB::BrowserHostPtr host;
 		std::string keyPath;	
 	};
 

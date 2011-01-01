@@ -17,11 +17,11 @@ using Implementation::ImplementationException;
 
 namespace API { 
 
-IndexedDatabase::IndexedDatabase(FB::BrowserHost host)
+IndexedDatabase::IndexedDatabase(FB::BrowserHostPtr host)
 	: host(host)
 	{ registerMethod("open", make_method(this, &IndexedDatabase::open)); }
 
-FB::JSOutObject IndexedDatabase::open(const string& name, const string& description, const FB::CatchAll& args)
+FB::JSAPIPtr IndexedDatabase::open(const string& name, const string& description, const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 	if(values.size() > 1)
@@ -32,7 +32,7 @@ FB::JSOutObject IndexedDatabase::open(const string& name, const string& descript
 	bool modifyDatabase = values.size() == 1 ? values[0].cast<bool>() : true;
 
 	try
-		{ return new DatabaseSync(host, name, description, modifyDatabase); }
+		{ return DatabaseSync::create(host, name, description, modifyDatabase); }
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
 	}

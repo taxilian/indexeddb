@@ -21,9 +21,9 @@ namespace API {
 class Index : public FB::JSAPIAuto
 {
 public:
-	boost::optional<std::string> getKeyPath() const { return keyPath; }
-	std::string getName() const { return indexName; }
-	std::string getObjectStoreName() const { return objectStoreName; }
+	boost::optional<std::string> getKeyPath() const;
+	const std::string getName() const;
+	const std::string getObjectStoreName() const;
 	bool getUnique() const { return unique; }
 
 protected:

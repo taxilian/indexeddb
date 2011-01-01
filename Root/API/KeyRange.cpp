@@ -37,12 +37,12 @@ void KeyRange::initializeMethods()
 	registerProperty("RIGHT_BOUND", make_property(this, &KeyRange::GetRightBound));
 
 	registerMethod("only", make_method(this, &KeyRange::only));
-	registerMethod("leftBound", make_method(this, static_cast<FB::JSOutObject (KeyRange::*)(FB::variant, const FB::CatchAll &)>(&KeyRange::leftBound))); 
-	registerMethod("rightBound", make_method(this, static_cast<FB::JSOutObject (KeyRange::*)(FB::variant, const FB::CatchAll &)>(&KeyRange::rightBound)));
-	registerMethod("bound", make_method(this, static_cast<FB::JSOutObject (KeyRange::*)(FB::variant, FB::variant, const FB::CatchAll &)>(&KeyRange::bound)));
+	registerMethod("leftBound", make_method(this, static_cast<FB::JSAPIPtr (KeyRange::*)(FB::variant, const FB::CatchAll &)>(&KeyRange::leftBound))); 
+	registerMethod("rightBound", make_method(this, static_cast<FB::JSAPIPtr (KeyRange::*)(FB::variant, const FB::CatchAll &)>(&KeyRange::rightBound)));
+	registerMethod("bound", make_method(this, static_cast<FB::JSAPIPtr (KeyRange::*)(FB::variant, FB::variant, const FB::CatchAll &)>(&KeyRange::bound)));
 	}
 
-FB::JSOutObject KeyRange::leftBound(FB::variant bound, const FB::CatchAll& args)
+FB::JSAPIPtr KeyRange::leftBound(FB::variant bound, const FB::CatchAll& args)
 	{ 
 	const FB::VariantList& values = args.value;
 
@@ -53,10 +53,10 @@ FB::JSOutObject KeyRange::leftBound(FB::variant bound, const FB::CatchAll& args)
 	
 	bool open = values.size() == 1 ? values[0].cast<bool>() : false;
 
-	return static_cast<FB::JSOutObject>(leftBound(bound, open));
+	return static_cast<FB::JSAPIPtr>(leftBound(bound, open));
 	}
 
-FB::JSOutObject KeyRange::rightBound(FB::variant bound, const FB::CatchAll& args)
+FB::JSAPIPtr KeyRange::rightBound(FB::variant bound, const FB::CatchAll& args)
 	{ 
 	const FB::VariantList& values = args.value;
 
@@ -67,10 +67,10 @@ FB::JSOutObject KeyRange::rightBound(FB::variant bound, const FB::CatchAll& args
 	
 	bool open = values.size() == 1 ? values[0].cast<bool>() : false;
 
-	return static_cast<FB::JSOutObject>(rightBound(bound, open));
+	return static_cast<FB::JSAPIPtr>(rightBound(bound, open));
 	}
 
-FB::JSOutObject KeyRange::bound(FB::variant left, FB::variant right, const FB::CatchAll& args)
+FB::JSAPIPtr KeyRange::bound(FB::variant left, FB::variant right, const FB::CatchAll& args)
 	{ 
 	const FB::VariantList& values = args.value;
 
@@ -84,19 +84,19 @@ FB::JSOutObject KeyRange::bound(FB::variant left, FB::variant right, const FB::C
 	bool openLeft = values.size() >= 1 ? values[0].cast<bool>() : false;
 	bool openRight = values.size() == 2 ? values[1].cast<bool>() : false;
 
-	return static_cast<FB::JSOutObject>(bound(left, right, openLeft, openRight));
+	return static_cast<FB::JSAPIPtr>(bound(left, right, openLeft, openRight));
 	}
 
-FB::AutoPtr<KeyRange> KeyRange::only(FB::variant value)
+boost::shared_ptr<KeyRange> KeyRange::only(FB::variant value)
 	{ return new KeyRange(value, value, KeyRange::SINGLE); }
 
-FB::AutoPtr<KeyRange> KeyRange::leftBound(FB::variant bound, const bool open)
+boost::shared_ptr<KeyRange> KeyRange::leftBound(FB::variant bound, const bool open)
 	{ return this->bound(bound, FB::variant(), open, false); }
 
-FB::AutoPtr<KeyRange> KeyRange::rightBound(FB::variant bound, const bool open)
+boost::shared_ptr<KeyRange> KeyRange::rightBound(FB::variant bound, const bool open)
 	{ return this->bound(FB::variant(), bound, false, open); }
 	
-FB::AutoPtr<KeyRange> KeyRange::bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight)
+boost::shared_ptr<KeyRange> KeyRange::bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight)
 	{ return new KeyRange(left, right, 
 		(!left.empty() ? KeyRange::LEFT_BOUND : 0) | 
 		(!right.empty() ? KeyRange::RIGHT_BOUND : 0) |

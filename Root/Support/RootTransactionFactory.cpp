@@ -4,11 +4,12 @@ http://code.google.com/p/indexeddb
 GNU Lesser General Public License
 \**********************************************************/
 
-#include "RootTransactionFactory.h"
+#include <boost/shared_ptr.hpp>
 #include "../API/Synchronized/TransactionSync.h"
 #include "../API/Synchronized/DatabaseSync.h"
 #include "../Implementation/Database.h"
 
+#include "RootTransactionFactory.h"
 using boost::optional;
 
 namespace BrandonHaynes {
@@ -20,10 +21,15 @@ namespace API {
 
 Implementation::TransactionContext RootTransactionFactory::getTransactionContext() const
 	{ 
-	return database.currentTransaction.is_initialized()
-		? (database.currentTransaction.get())->getTransactionContext()
+	return database->currentTransaction.is_initialized()
+		? (database->currentTransaction.get())->getTransactionContext()
 		: TransactionContext();
 	}
+
+void RootTransactionFactory::setDatabaseSync( const DatabaseSyncPtr& ptr )
+{
+    database = ptr;
+}
 
 }
 }

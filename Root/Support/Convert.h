@@ -31,26 +31,26 @@ namespace API {
 	public:
 		/// Convert a given variant into an implementation Data instance.  Note that we require the host
 		/// value in order to perform JSON encoding, in case we're handed an object.
-		static Implementation::Data toData(FB::BrowserHost host, const FB::variant& variant);
+		static Implementation::Data toData(FB::BrowserHostPtr host, const FB::variant& variant);
 		/// Convert a given variant into an implementation Key instance.  Note that we require the host
 		/// value in order to perform JSON parsing, in case we're handed an object.
-		static Implementation::Key toKey(FB::BrowserHost host, const FB::variant& variant);
+		static Implementation::Key toKey(FB::BrowserHostPtr host, const FB::variant& variant);
 		/// Convert a given Data instance into an implementation FireBreath variant.  Note that we require the host
 		/// value in order to perform JSON stringification, in case we're handed an object.
-		static FB::variant toVariant(FB::BrowserHost host, const Implementation::Data& data);
+		static FB::variant toVariant(FB::BrowserHostPtr host, const Implementation::Data& data);
 		/// Given a variant, returns the ECMAType associated with that value (in a form digestiable by the implementation)
 		static Implementation::Data::ECMAType getType(FB::variant variant);
 
 		/// Stringifies the given object (requires a host instance to access the browser JSON implementation)
-		static std::string stringify(FB::BrowserHost host, const FB::JSObject& object);
+		static std::string stringify(FB::BrowserHostPtr host, const FB::JSObjectPtr& object);
 		/// Parses a given string into a FireBreath JSOutObject instance (requires a host instance to access the browser JSON implementation)
-		static FB::JSObject parse(FB::BrowserHost host, const std::string& string);
+		static FB::JSObjectPtr parse(FB::BrowserHostPtr host, const std::string& string);
 
 	private:
 		Convert() { }
 
 		template<class T>
-		static T convert(FB::BrowserHost host, const FB::variant& variant);
+		static T convert(FB::BrowserHostPtr host, const FB::variant& variant);
 	};
 
 }

@@ -16,17 +16,37 @@ file (GLOB GENERAL RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     *.cpp
     *.h
     *.cmake
-    root/API/*.cpp
-    root/API/*.h
+    )
+
+file (GLOB SYNC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     root/API/Synchronized/*.cpp
     root/API/Synchronized/*.h
-    root/Implementation/*.cpp
-    root/Implementation/*.h
+)
+source_group(Synchronized FILES ${SYNC_FILES})
+
+file (GLOB API_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    root/API/*.cpp
+    root/API/*.h
+)
+source_group(API FILES ${API_FILES})
+
+file (GLOB BERK_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     root/Implementation/BerkeleyDatabase/*.cpp
     root/Implementation/BerkeleyDatabase/*.h
+)
+source_group(BerklyDatabase FILES ${BERK_FILES})
+
+file (GLOB IMPL_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    root/Implementation/*.cpp
+    root/Implementation/*.h
+)
+source_group(Implementation FILES ${IMPL_FILES})
+
+file (GLOB SUPPORT_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     root/Support/*.cpp
     root/Support/*.h
-    )
+)
+source_group(Support FILES ${SUPPORT_FILES})
 
 # Generated files are stored in ${GENERATED} by the project configuration
 SET_SOURCE_FILES_PROPERTIES(
@@ -41,6 +61,10 @@ SOURCE_GROUP(Generated FILES
 
 SET( SOURCES
     ${GENERAL}
+    ${SYNC_FILES}
+    ${API_FILES}
+    ${BERK_FILES}
+    ${SUPPORT_FILES}
     ${GENERATED}
     )
 

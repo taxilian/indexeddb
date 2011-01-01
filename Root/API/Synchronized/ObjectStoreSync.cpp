@@ -30,7 +30,47 @@ using Implementation::AbstractDatabaseFactory;
 
 namespace API { 
 
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const string& keyPath, const bool autoIncrement)
+    namespace {
+        // Hide implementation details from global scope since it just doesn't need to be known outside of this file
+        class _privateObservable : Support::LifeCycleObservable<ObjectStoreSync> {
+        private:
+            const ObjectStoreSync* parent;
+
+        public:
+            _privateObservable(const ObjectStoreSync* parent);
+            ~_privateObservable();
+            void invalidate();
+
+    		virtual void onTransactionCommitted(const TransactionPtr& transaction);
+    		virtual void onTransactionAborted(const TransactionPtr& transaction);
+        };
+
+        _privateObservable::_privateObservable(const ObjectStoreSync* parent) : parent(parent)
+        {}
+
+        void _privateObservable::invalidate()
+        {
+            parent = NULL;
+        }
+
+        _privateObservable::~_privateObservable()
+        {}
+
+        void _privateObservable::onTransactionCommitted( const TransactionPtr& transaction )
+        {
+            if (parent)
+                parent->onTransactionCommitted(transaction);
+        }
+
+        void _privateObservable::onTransactionAborted( const TransactionPtr& transaction )
+        {
+            if (parent)
+                parent->onTransactionAborted(transaction);
+        }
+
+    }
+
+ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const string& keyPath, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
 		host(host), 
 	    transactionFactory(transactionFactory),
@@ -38,11 +78,11 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, T
 		implementation(AbstractDatabaseFactory::getInstance().createObjectStore(
 			transactionFactory.getDatabaseContext(), name, autoIncrement, transactionContext))
 	{ 
-	createMetadata(keyPath, autoIncrement, transactionContext);
 	initializeMethods(); 
+	createMetadata(keyPath, autoIncrement, transactionContext);
 	}
 
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const bool autoIncrement)
+ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
 		host(host), 
 	    transactionFactory(transactionFactory),
@@ -51,11 +91,11 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, T
 			transactionFactory.getDatabaseContext(), name, autoIncrement, transactionContext))
 	{ 
 	//TODO docs say we open all indexes whenever we open the object store (http://www.oracle.com/technology/documentation/berkeley-db/db/programmer_reference/am_second.html)
-	createMetadata(boost::optional<string>(), autoIncrement, transactionContext);
 	initializeMethods(); 
+	createMetadata(boost::optional<string>(), autoIncrement, transactionContext);
 	}
 
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const Implementation::ObjectStore::Mode mode)
+ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const Implementation::ObjectStore::Mode mode)
 	:	ObjectStore(name, mode),
 		transactionFactory(transactionFactory),
 		host(host), 
@@ -63,22 +103,26 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHost host, DatabaseSync& database, T
 		implementation(AbstractDatabaseFactory::getInstance().openObjectStore(
 			transactionFactory.getDatabaseContext(), name, mode, transactionContext))
 	{ 
-	loadMetadata(transactionContext);
 	initializeMethods(); 
+	loadMetadata(transactionContext);
 	}
 
 ObjectStoreSync::~ObjectStoreSync(void)
-	{ close(); }
+    {
+    close();
+    FB::ptr_cast<_privateObservable>(_observable)->invalidate();
+    }
 
 
 void ObjectStoreSync::initializeMethods()
 	{
+    _observable = boost::make_shared<_privateObservable>(this);
 	registerMethod("get", make_method(this, &ObjectStoreSync::get));
 	registerMethod("put", make_method(this, &ObjectStoreSync::put));
 	registerMethod("remove", make_method(this, &ObjectStoreSync::remove));
-	registerMethod("openCursor", make_method(this, static_cast<FB::JSOutObject (ObjectStoreSync::*)(const FB::CatchAll &)>(&ObjectStoreSync::openCursor))); 
+	registerMethod("openCursor", make_method(this, static_cast<FB::JSAPIPtr (ObjectStoreSync::*)(const FB::CatchAll &)>(&ObjectStoreSync::openCursor))); 
 
-	registerMethod("createIndex", FB::make_method(this, static_cast<FB::JSOutObject (ObjectStoreSync::*)(const string, const FB::CatchAll &)>(&ObjectStoreSync::createIndex)));
+	registerMethod("createIndex", FB::make_method(this, static_cast<FB::JSAPIPtr (ObjectStoreSync::*)(const string, const FB::CatchAll &)>(&ObjectStoreSync::createIndex)));
 	registerMethod("openIndex", FB::make_method(this, &ObjectStoreSync::openIndex));
 	registerMethod("removeIndex", FB::make_method(this, static_cast<void (ObjectStoreSync::*)(const string&)>(&ObjectStoreSync::removeIndex)));
 	}
@@ -144,7 +188,7 @@ void ObjectStoreSync::close()
 	}
 
 
-FB::JSOutObject ObjectStoreSync::openCursor(const FB::CatchAll& args)
+FB::JSAPIPtr ObjectStoreSync::openCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
@@ -167,14 +211,14 @@ FB::JSOutObject ObjectStoreSync::openCursor(const FB::CatchAll& args)
 		: optional<KeyRange>();
 	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
 
-	return static_cast<FB::JSOutObject>(openCursor(range, direction));
+	return static_cast<FB::JSAPIPtr>(openCursor(range, direction));
 	}
 
-FB::AutoPtr<CursorSync> ObjectStoreSync::openCursor(const optional<KeyRange> range, const Cursor::Direction direction)
+boost::shared_ptr<CursorSync> ObjectStoreSync::openCursor(const optional<KeyRange> range, const Cursor::Direction direction)
 	{
 	try
 		{ 
-		FB::AutoPtr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction); 
+		boost::shared_ptr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction); 
 		openCursors.add(cursor);
 		return cursor;
 		}
@@ -183,7 +227,7 @@ FB::AutoPtr<CursorSync> ObjectStoreSync::openCursor(const optional<KeyRange> ran
 	}
 
 
-FB::JSOutObject ObjectStoreSync::createIndex(const string name, const FB::CatchAll& args)
+FB::JSAPIPtr ObjectStoreSync::createIndex(const string name, const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
@@ -197,25 +241,25 @@ FB::JSOutObject ObjectStoreSync::createIndex(const string name, const FB::CatchA
 	optional<string> keyPath = values.size() >= 1 && !values[0].empty() ? values[0].cast<string>() : optional<string>();
 	bool unique = values.size() == 2 ? values[1].cast<bool>() : false;
 
-	return static_cast<FB::JSOutObject>(createIndex(name, keyPath, unique));
+	return static_cast<FB::JSAPIPtr>(createIndex(name, keyPath, unique));
 	}
 
-FB::AutoPtr<IndexSync> ObjectStoreSync::createIndex(const string name, const optional<string> keyPath, bool unique)
+boost::shared_ptr<IndexSync> ObjectStoreSync::createIndex(const string name, const optional<string> keyPath, bool unique)
 	{
 	metadata.addToMetadataCollection("indexes", name, transactionFactory, transactionFactory.getTransactionContext());
 
-	FB::AutoPtr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name, keyPath, unique);
+	boost::shared_ptr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name, keyPath, unique);
 	openIndexes.add(index);
 	return index;
 	}
 
-FB::JSOutObject ObjectStoreSync::openIndex(const string& name)
+FB::JSAPIPtr ObjectStoreSync::openIndex(const string& name)
 	{
 	try
 		{
-		FB::AutoPtr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name);
+		boost::shared_ptr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name);
 		openIndexes.add(index);
-		return static_cast<FB::JSOutObject>(index);
+		return static_cast<FB::JSAPIPtr>(index);
 		}
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
