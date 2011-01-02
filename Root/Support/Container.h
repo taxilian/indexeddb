@@ -21,6 +21,7 @@ namespace BrandonHaynes {
         namespace API { 
 
             class Transaction;
+            typedef boost::shared_ptr<Transaction> TransactionPtr;
 
             namespace Support {
 
@@ -29,14 +30,20 @@ namespace BrandonHaynes {
                 {
                 public:
                     typedef boost::shared_ptr<LifeCycleObserver<T> > LifeCycleObserverPtr;
+                    typedef boost::weak_ptr<LifeCycleObserver<T> > LifeCycleObserverWeakPtr;
+                    typedef boost::shared_ptr<LifeCycleObservable<T> > LifeCycleObservablePtr;
+                    typedef boost::weak_ptr<LifeCycleObservable<T> > LifeCycleObservableWeakPtr;
                     void add(const boost::weak_ptr<T>& child) 
                     { 
                         lock_guard<mutex> guard(synchronization);
-                        children.push_back(child); 
-                        child->addLifeCycleObserver(shared_from_this());
+                        const boost::shared_ptr<T>& tmp = child.lock();
+                        if (tmp) {
+                            children.push_back(child); 
+                            tmp->addLifeCycleObserver(shared_from_this());
+                        }
                     }
 
-                    template<class Predicate>
+                    template<typename Predicate>
                     void remove(const Predicate& predicate) 
                     { 
                         lock_guard<mutex> guard(synchronization);
@@ -94,7 +101,7 @@ namespace BrandonHaynes {
 
                         bool operator ()(const boost::weak_ptr<T>& en)
                         {
-                            boost::shared_ptr entity(en.lock());
+                            boost::shared_ptr<T> entity(en.lock());
                             if(entity && name == entity->getName()) { 
                                 entity->removeLifeCycleObserver(observer);
                                 entity->close(); 
@@ -114,10 +121,13 @@ namespace BrandonHaynes {
                         CloseFunctor(const LifeCycleObserverPtr& observer) 
                             : observer(observer) { }
 
-                        void operator ()(const LifeCycleObserverPtr& entity) 
+                        void operator ()(const boost::weak_ptr<T>& entity) 
                         { 
-                            entity->removeLifeCycleObserver(observer);
-                            entity->close(); 
+                            boost::shared_ptr<T> ptr(entity.lock());
+                            if (ptr) {
+                                ptr->removeLifeCycleObserver(observer);
+                                ptr->close(); 
+                            }
                         }
                     };
 
@@ -128,8 +138,12 @@ namespace BrandonHaynes {
                         CommitFunctor(const TransactionPtr& transaction) 
                             : transaction(transaction) { }
 
-                        void operator ()(const LifeCycleObserverPtr& const entity) 
-                        { entity->onTransactionCommitted(transaction); }
+                        void operator ()(const boost::weak_ptr<T>& entity) 
+                        {
+                            boost::shared_ptr<T> ptr(entity.lock());
+                            if (ptr)
+                                ptr->onTransactionCommitted(transaction);
+                        }
                     };
 
                     struct AbortFunctor
@@ -139,8 +153,12 @@ namespace BrandonHaynes {
                         AbortFunctor(const TransactionPtr& transaction) 
                             : transaction(transaction) { }
 
-                        void operator ()(const LifeCycleObserverPtr& entity) 
-                        { entity->onTransactionAborted(transaction); }
+                        void operator ()(const boost::weak_ptr<T>& entity) 
+                        {
+                            boost::shared_ptr<T> ptr(entity.lock());
+                            if (ptr)
+                                ptr->onTransactionAborted(transaction);
+                        }
                     };
 
                 private:

@@ -11,6 +11,7 @@ GNU Lesser General Public License
 #include "../API/DatabaseException.h"
 
 using std::string;
+using std::wstring;
 
 namespace BrandonHaynes {
 namespace IndexedDB { 
@@ -32,7 +33,7 @@ T Convert::convert(FB::BrowserHostPtr host, const FB::variant& variant)
 	switch(getType(variant))
 		{
 		case Data::String:
-			return T(variant.cast<string>());
+			return T(variant.convert_cast<string>());
 		case Data::Integer:
 			return T((void *)&variant.cast<int>(), sizeof(int), Data::Integer);
 		case Data::Boolean:
@@ -78,12 +79,14 @@ FB::variant Convert::toVariant(FB::BrowserHostPtr host, const Data& data)
 
 Data::ECMAType Convert::getType(FB::variant variant)
 	{
-	if(variant.is_of_type<string>())
+    if (variant.can_be_type<int>())
+        return Data::Integer;
+	else if(variant.is_of_type<wstring>())
+		return Data::String;
+	else if(variant.is_of_type<string>())
 		return Data::String;
 	else if(variant.is_of_type<int>())
 		return Data::Integer;
-	else if(variant.is_of_type<bool>())
-		return Data::Boolean;
 	else if(variant.is_of_type<double>())
 		return Data::Number;
 	else if(variant.is_of_type<FB::JSObjectPtr>())

@@ -21,14 +21,14 @@ Key KeyPathKeyGenerator::generateKey(const Data& context) const
 	// TODO Does the spec support a keypath that looks like path1.path2?
 	{ return Convert::toKey(host, generateKey(Convert::toVariant(host, context))); }
 
-const FB::variant KeyPathKeyGenerator::generateKey(FB::variant value) const
+const FB::variant KeyPathKeyGenerator::generateKey(const FB::variant& value) const
 	{
-	return value.is_of_type<FB::JSObject>()
-		? generateKey(value.cast<FB::JSObject>())
+	return value.can_be_type<FB::JSObjectPtr>()
+		? generateKey(value.convert_cast<FB::JSObjectPtr>())
 		: FB::variant();
 	}
 
-const FB::variant KeyPathKeyGenerator::generateKey(FB::JSObject object) const
+const FB::variant KeyPathKeyGenerator::generateKey(const FB::JSObjectPtr& object) const
 	{ return object->GetProperty(keyPath); }
 
 }

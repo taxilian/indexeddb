@@ -1,6 +1,6 @@
 #include <string>
 #include <sstream>
-#include "BrowserHostWrapper.h"
+#include "BrowserHost.h"
 
 #include "Root/API/Synchronized/EnvironmentSync.h"
 

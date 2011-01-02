@@ -33,7 +33,7 @@ IndexedDatabasePlugin::~IndexedDatabasePlugin()
 {
 }
 
-FB::JSAPI* IndexedDatabasePlugin::createJSAPI()
+FB::JSAPIPtr IndexedDatabasePlugin::createJSAPI()
 {
     // m_host is the BrowserHostWrapper
     return boost::make_shared<IndexedDatabasePluginAPI>(m_host);

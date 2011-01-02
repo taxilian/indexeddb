@@ -4,19 +4,19 @@ http://code.google.com/p/indexeddb
 GNU Lesser General Public License
 \**********************************************************/
 
-#include <BrowserHostWrapper.h>
+#include <BrowserHost.h>
 #include "EnvironmentSync.h"
 
 namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-EnvironmentSync::EnvironmentSync(FB::BrowserHostPtr host)
-	: indexedDB(new IndexedDatabase(host))
+EnvironmentSync::EnvironmentSync(const FB::BrowserHostPtr& host)
+	: indexedDB(boost::make_shared<IndexedDatabase>(host))
 	{ }
 
 FB::JSAPIPtr EnvironmentSync::getIndexedDB()
-	{ return static_cast<FB::JSAPIPtr>(indexedDB); }
+	{ return indexedDB; }
 
 }
 }

@@ -13,6 +13,7 @@ GNU Lesser General Public License
 #include "../../Implementation/Data.h"
 #include "../../Support/Convert.h"
 #include "../../Support/KeyPathKeyGenerator.h"
+#include "../../Support/privateObservable.h"
 
 using std::auto_ptr;
 using std::string;
@@ -30,47 +31,17 @@ using Implementation::AbstractDatabaseFactory;
 
 namespace API { 
 
-    namespace {
-        // Hide implementation details from global scope since it just doesn't need to be known outside of this file
-        class _privateObservable : Support::LifeCycleObservable<ObjectStoreSync> {
-        private:
-            const ObjectStoreSync* parent;
+void ObjectStoreSync::addLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->addLifeCycleObserver(observer);
+}
 
-        public:
-            _privateObservable(const ObjectStoreSync* parent);
-            ~_privateObservable();
-            void invalidate();
+void ObjectStoreSync::removeLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->removeLifeCycleObserver(observer);
+}
 
-    		virtual void onTransactionCommitted(const TransactionPtr& transaction);
-    		virtual void onTransactionAborted(const TransactionPtr& transaction);
-        };
-
-        _privateObservable::_privateObservable(const ObjectStoreSync* parent) : parent(parent)
-        {}
-
-        void _privateObservable::invalidate()
-        {
-            parent = NULL;
-        }
-
-        _privateObservable::~_privateObservable()
-        {}
-
-        void _privateObservable::onTransactionCommitted( const TransactionPtr& transaction )
-        {
-            if (parent)
-                parent->onTransactionCommitted(transaction);
-        }
-
-        void _privateObservable::onTransactionAborted( const TransactionPtr& transaction )
-        {
-            if (parent)
-                parent->onTransactionAborted(transaction);
-        }
-
-    }
-
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const string& keyPath, const bool autoIncrement)
+ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const string& keyPath, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
 		host(host), 
 	    transactionFactory(transactionFactory),
@@ -82,7 +53,7 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr&
 	createMetadata(keyPath, autoIncrement, transactionContext);
 	}
 
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const bool autoIncrement)
+ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
 		host(host), 
 	    transactionFactory(transactionFactory),
@@ -95,7 +66,7 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr&
 	createMetadata(boost::optional<string>(), autoIncrement, transactionContext);
 	}
 
-ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const Implementation::ObjectStore::Mode mode)
+ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const Implementation::ObjectStore::Mode mode)
 	:	ObjectStore(name, mode),
 		transactionFactory(transactionFactory),
 		host(host), 
@@ -110,13 +81,13 @@ ObjectStoreSync::ObjectStoreSync(FB::BrowserHostPtr host, const DatabaseSyncPtr&
 ObjectStoreSync::~ObjectStoreSync(void)
     {
     close();
-    FB::ptr_cast<_privateObservable>(_observable)->invalidate();
+    FB::ptr_cast<Support::_privateObservable<ObjectStoreSync> >(_observable)->invalidate();
     }
 
 
 void ObjectStoreSync::initializeMethods()
 	{
-    _observable = boost::make_shared<_privateObservable>(this);
+    _observable = boost::make_shared<Support::_privateObservable<ObjectStoreSync> >(this);
 	registerMethod("get", make_method(this, &ObjectStoreSync::get));
 	registerMethod("put", make_method(this, &ObjectStoreSync::put));
 	registerMethod("remove", make_method(this, &ObjectStoreSync::remove));
@@ -181,7 +152,7 @@ void ObjectStoreSync::close()
 	{ 
 	lock_guard<mutex> guard(synchronization);
 
-	this->raiseOnCloseEvent();
+	_observable->raiseOnCloseEvent();
 	openCursors.release();
 	openIndexes.release();
 	this->implementation->close(); 
@@ -192,33 +163,44 @@ FB::JSAPIPtr ObjectStoreSync::openCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
-	if(values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() >= 1 && 
-		(!values[0].is_of_type<FB::JSObject>() ||
- 		 !values[0].cast<FB::JSObject>()->HasProperty("left") || 
-		 !values[0].cast<FB::JSObject>()->HasProperty("right") ||
-		 !values[0].cast<FB::JSObject>()->HasProperty("flags") ||
-		 !values[0].cast<FB::JSObject>()->GetProperty("flags").is_of_type<int>()))
-			throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<int>())
+    if (!values.size() || values[0].empty())
+        return openCursor(KeyRangePtr(), Cursor::NEXT);
+
+	if(values.size() > 2 || !values.size())
 		throw FB::invalid_arguments();
 
-	optional<KeyRange> range = values.size() >= 1
-		? KeyRange(values[0].cast<FB::JSObject>()->GetProperty("left"),
-			values[0].cast<FB::JSObject>()->GetProperty("right"),
-			values[0].cast<FB::JSObject>()->GetProperty("flags").cast<int>())
-		: optional<KeyRange>();
-	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
+    int flags = 0;
+    try {
+        FB::VariantMap info = values[0].convert_cast<FB::VariantMap>();
+        if (info.find("right") == info.end() |
+            info.find("left") == info.end() |
+            info.find("flags") == info.end()) {
+            throw FB::invalid_arguments();
+        }
+        if (values.size() > 1 && values[1].can_be_type<int>()) {
+            flags = values[1].convert_cast<int>();
+        } else if(values.size() == 2) {
+            flags = info["flags"].convert_cast<int>();
+        }
 
-	return static_cast<FB::JSAPIPtr>(openCursor(range, direction));
+        KeyRangePtr range(boost::make_shared<KeyRange>(info["left"], info["right"], flags));
+    	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(flags) : Cursor::NEXT;
+
+    	return openCursor(range, direction);
+        }
+    catch (const FB::bad_variant_cast&)
+        {
+        throw FB::invalid_arguments();
+        }
 	}
 
-boost::shared_ptr<CursorSync> ObjectStoreSync::openCursor(const optional<KeyRange> range, const Cursor::Direction direction)
+boost::shared_ptr<CursorSync> ObjectStoreSync::openCursor(const KeyRangePtr& range, const Cursor::Direction direction)
 	{
 	try
 		{ 
-		boost::shared_ptr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction); 
+		CursorSyncPtr cursor(
+            new CursorSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, range, direction)
+            );
 		openCursors.add(cursor);
 		return cursor;
 		}
@@ -248,7 +230,9 @@ boost::shared_ptr<IndexSync> ObjectStoreSync::createIndex(const string name, con
 	{
 	metadata.addToMetadataCollection("indexes", name, transactionFactory, transactionFactory.getTransactionContext());
 
-	boost::shared_ptr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name, keyPath, unique);
+	IndexSyncPtr index(
+        new IndexSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, metadata, name, keyPath, unique)
+        );
 	openIndexes.add(index);
 	return index;
 	}
@@ -257,7 +241,9 @@ FB::JSAPIPtr ObjectStoreSync::openIndex(const string& name)
 	{
 	try
 		{
-		boost::shared_ptr<IndexSync> index = new IndexSync(host, *this, transactionFactory, metadata, name);
+		IndexSyncPtr index(
+            new IndexSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, metadata, name)
+            );
 		openIndexes.add(index);
 		return static_cast<FB::JSAPIPtr>(index);
 		}
@@ -331,14 +317,14 @@ void ObjectStoreSync::loadMetadata(TransactionContext& transactionContext)
 StringVector ObjectStoreSync::getIndexNames() const
 	{ return metadata.getMetadataCollection("indexes", transactionFactory.getTransactionContext()); } 
 
-void ObjectStoreSync::onTransactionCommitted(const Transaction& transaction)
+void ObjectStoreSync::onTransactionCommitted(const TransactionPtr& transaction)
 	{ 
 	openCursors.raiseTransactionCommitted(transaction); 
 	openIndexes.raiseTransactionCommitted(transaction); 
 	openCursors.release();
 	}
 
-void ObjectStoreSync::onTransactionAborted(const Transaction& transaction)
+void ObjectStoreSync::onTransactionAborted(const TransactionPtr& transaction)
 	{ 
 	openCursors.raiseTransactionAborted(transaction); 
 	openIndexes.raiseTransactionAborted(transaction); 

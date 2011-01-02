@@ -22,7 +22,7 @@ class LifeCycleObservable;
 /// implementation of the onClose handler.
 ///</summary>
 template<class T>
-class LifeCycleObserver : boost::enable_shared_from_this<LifeCycleObserver<T> >
+class LifeCycleObserver : public boost::enable_shared_from_this<LifeCycleObserver<T> >
 	{
 	public:
 		virtual void onClose(const boost::weak_ptr<T>& entity) = 0;

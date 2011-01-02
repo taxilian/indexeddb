@@ -31,9 +31,9 @@ class KeyPathKeyGenerator : public Implementation::KeyGenerator
 
 		virtual Implementation::Key generateKey(const Implementation::Data& context) const;
 		// Generate a key using the key path for the given variant if the variant is of type JSObject (ECMA undefined otherwise)
-		const FB::variant generateKey(FB::variant value) const;
+		const FB::variant generateKey(const FB::variant& value) const;
 		// Generate a key using the key path as a property lookup in the JSObject argument
-		const FB::variant generateKey(FB::JSObjectPtr object) const;
+		const FB::variant generateKey(const FB::JSObjectPtr& object) const;
 
 	private:
 		FB::BrowserHostPtr host;

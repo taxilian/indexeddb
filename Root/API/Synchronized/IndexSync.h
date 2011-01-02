@@ -20,18 +20,21 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-class ObjectStoreSync;
-class KeyRange;
-class CursorSync;
+FB_FORWARD_PTR(ObjectStoreSync);
+FB_FORWARD_PTR(KeyRange);
+FB_FORWARD_PTR(CursorSync);
 
 ///<summary>
 /// This class represents a synchronized index in the Indexed Database API.
 ///</summary>
-class IndexSync : public Index, public Support::LifeCycleObservable<IndexSync>
+class IndexSync : public Index
 {
+protected:
+    boost::shared_ptr<Support::LifeCycleObservable<IndexSync> > _observable;
+    typedef boost::shared_ptr<Support::LifeCycleObserver<IndexSync> > LifeCycleObserverPtr;
 public:
-	IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name);
-	IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name, const boost::optional<std::string>& keyPath, const bool unique);
+	IndexSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name);
+	IndexSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const std::string& name, const boost::optional<std::string>& keyPath, const bool unique);
 	~IndexSync(void);
 
 	// Get the primary key associated with the given secondary key in the index
@@ -46,15 +49,17 @@ public:
 	void close();
 
 	// Open a cursor over this index
-	boost::shared_ptr<CursorSync> openCursor(const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys);
+	CursorSyncPtr openCursor(const KeyRangePtr& range, const Cursor::Direction direction, const bool dataArePrimaryKeys);
 
+    // Forwarding methods for the embedded Observable
+	void addLifeCycleObserver(const LifeCycleObserverPtr& observer);
+	void removeLifeCycleObserver(const LifeCycleObserverPtr& observer);
+	// We need to be notified when a transaction commits so we can close our cursors
+	virtual void onTransactionAborted(const TransactionPtr& transaction);
+	virtual void onTransactionCommitted(const TransactionPtr& transaction);
 protected:
 	// We maintain a set of opened cursors; these must be forcably closed prior to closing the index
 	Support::Container<CursorSync> openCursors;
-
-	// We need to be notified when a transaction commits so we can close our cursors
-	virtual void onTransactionAborted(const Transaction& transaction);
-	virtual void onTransactionCommitted(const Transaction& transaction);
 
 private:
 	FB::BrowserHostPtr host;

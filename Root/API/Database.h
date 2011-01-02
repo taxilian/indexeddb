@@ -36,7 +36,7 @@ namespace IndexedDB {
 			virtual boost::optional<std::string> getVersion() const = 0;
 
 			// Gets the current transaction associated with this database, if any
-			virtual boost::optional<TransactionPtr> getCurrentTransaction() const = 0;
+			virtual TransactionPtr getCurrentTransaction() const = 0;
 
 			// Get the set of object store names associated with this database
 			virtual std::vector<std::string> getObjectStoreNames() = 0;

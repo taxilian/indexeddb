@@ -76,32 +76,42 @@ FB::JSAPIPtr KeyRange::bound(FB::variant left, FB::variant right, const FB::Catc
 
 	if(values.size() > 2)
 		throw FB::invalid_arguments();
-	else if(values.size() >= 1 && !values[0].is_of_type<bool>())
+	else if(values.size() >= 1 && !values[0].can_be_type<bool>())
 		throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<bool>())
+	else if(values.size() == 2 && !values[1].can_be_type<bool>())
 		throw FB::invalid_arguments();
 	
-	bool openLeft = values.size() >= 1 ? values[0].cast<bool>() : false;
-	bool openRight = values.size() == 2 ? values[1].cast<bool>() : false;
+	bool openLeft = values.size() >= 1 ? values[0].convert_cast<bool>() : false;
+	bool openRight = values.size() == 2 ? values[1].convert_cast<bool>() : false;
 
-	return static_cast<FB::JSAPIPtr>(bound(left, right, openLeft, openRight));
+	return bound(left, right, openLeft, openRight);
 	}
 
-boost::shared_ptr<KeyRange> KeyRange::only(FB::variant value)
-	{ return new KeyRange(value, value, KeyRange::SINGLE); }
+KeyRangePtr KeyRange::only(FB::variant value)
+{
+    return boost::make_shared<KeyRange>(value, value, KeyRange::SINGLE);
+}
 
-boost::shared_ptr<KeyRange> KeyRange::leftBound(FB::variant bound, const bool open)
-	{ return this->bound(bound, FB::variant(), open, false); }
+KeyRangePtr KeyRange::leftBound(FB::variant bound, const bool open)
+{ 
+    return this->bound(bound, FB::variant(), open, false);
+}
 
-boost::shared_ptr<KeyRange> KeyRange::rightBound(FB::variant bound, const bool open)
-	{ return this->bound(FB::variant(), bound, false, open); }
+KeyRangePtr KeyRange::rightBound(FB::variant bound, const bool open)
+{ 
+    return this->bound(FB::variant(), bound, false, open); 
+}
 	
-boost::shared_ptr<KeyRange> KeyRange::bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight)
-	{ return new KeyRange(left, right, 
-		(!left.empty() ? KeyRange::LEFT_BOUND : 0) | 
-		(!right.empty() ? KeyRange::RIGHT_BOUND : 0) |
-		(openLeft ? KeyRange::LEFT_OPEN : 0) |
-		(openRight ? KeyRange::RIGHT_OPEN : 0)); }
+KeyRangePtr KeyRange::bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight)
+{ 
+    int flags(!left.empty() ? LEFT_BOUND : 0);
+    if (!right.empty()) flags |= RIGHT_BOUND;
+    if (openLeft) flags |= LEFT_OPEN;
+    if (openRight) flags |= RIGHT_OPEN;
+    
+    return boost::make_shared<KeyRange>(left, right, flags);
+
+}
 
 }
 }

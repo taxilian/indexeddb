@@ -28,11 +28,12 @@ BrandonHaynes::IndexedDB::API::DatabaseSyncPtr DatabaseSync::create( FB::Browser
     {
     DatabaseSyncPtr ptr(new DatabaseSync(host, name, description, modifyDatabase));
     ptr->init();
+    return ptr;
     }
 
 void DatabaseSync::init()
     {
-    transactionFactory.setDatabaseSync(ptr);
+    transactionFactory.setDatabaseSync(FB::ptr_cast<DatabaseSync>(shared_from_this()));
     }
 
 DatabaseSync::DatabaseSync(FB::BrowserHostPtr host, const string& name, const string& description, const bool modifyDatabase)
@@ -56,8 +57,8 @@ DatabaseSync::DatabaseSync(FB::BrowserHostPtr host, const string& name, const st
 
 DatabaseSync::~DatabaseSync()
 	{
-	if(currentTransaction.is_initialized())
-		(*currentTransaction)->close();
+	if(currentTransaction)
+		currentTransaction->close();
 
 	openObjectStores.release();
 	}
@@ -120,7 +121,15 @@ boost::shared_ptr<ObjectStoreSync> DatabaseSync::createObjectStore(const string&
 
 	metadata.addToMetadataCollection("objectStores", name, transactionFactory, transactionFactory.getTransactionContext());
 	boost::shared_ptr<ObjectStoreSync> objectStore(
-        boost::make_shared<ObjectStoreSync>(host, *this, transactionFactory, transactionFactory.getTransactionContext(), metadata, name, keyPath, autoIncrement));
+        new ObjectStoreSync(
+            host,
+            FB::ptr_cast<DatabaseSync>(shared_from_this()),
+            transactionFactory,
+            transactionFactory.getTransactionContext(),
+            metadata,
+            name,
+            keyPath,
+            autoIncrement));
 	openObjectStores.add(objectStore);
 
 	return objectStore;
@@ -135,7 +144,16 @@ boost::shared_ptr<ObjectStoreSync> DatabaseSync::createObjectStore(const string&
 		auto_ptr<Implementation::Transaction> transaction = transactionFactory.createTransaction();
 		
 		metadata.addToMetadataCollection("objectStores", name, transactionFactory, *transaction);
-		boost::shared_ptr<ObjectStoreSync> objectStore = new ObjectStoreSync(host, *this, transactionFactory, *transaction, metadata, name, autoIncrement); 
+		boost::shared_ptr<ObjectStoreSync> objectStore(
+            new ObjectStoreSync(
+                host,
+                FB::ptr_cast<DatabaseSync>(shared_from_this()),
+                transactionFactory,
+                *transaction,
+                metadata,
+                name,
+                autoIncrement
+            ));
 		openObjectStores.add(objectStore);
 
 		transaction->commit();
@@ -165,7 +183,15 @@ boost::shared_ptr<ObjectStoreSync> DatabaseSync::openObjectStore(const string& n
 
 	try
 		{
-		boost::shared_ptr<ObjectStoreSync> objectStore = new ObjectStoreSync(host, *this, transactionFactory, transactionFactory.getTransactionContext(), metadata, name, mode);
+		boost::shared_ptr<ObjectStoreSync> objectStore(
+            new ObjectStoreSync(
+                host,
+                FB::ptr_cast<DatabaseSync>(shared_from_this()),
+                transactionFactory,
+                transactionFactory.getTransactionContext(),
+                metadata,
+                name,
+                mode));
 		openObjectStores.add(objectStore);
 		return objectStore;
 		}
@@ -209,7 +235,7 @@ StringVector DatabaseSync::getIndexNames()
 	}
 
 boost::shared_ptr<TransactionSync> DatabaseSync::transaction(const string& objectStoreName, const optional<unsigned int>& timeout)
-	{ return transaction(optional<StringVector>(StringVector(1, objectStoreName)), timeout); }
+	{ return transaction(StringVector(1, objectStoreName), timeout); }
 
 FB::JSAPIPtr DatabaseSync::transaction(const FB::CatchAll& args)
 	{
@@ -227,80 +253,76 @@ FB::JSAPIPtr DatabaseSync::transaction(const FB::CatchAll& args)
 	// We allow a single string, an array, or nothing as possible object store names
 	// (Believe spec disallows a single string, but that's silly)
 	if(values.size() == 0)
-		transaction(optional<StringVector>(), timeout);
-	else if(values[0].is_of_type<string>())
-		transaction(values[0].cast<string>(), timeout);
-	else if(values[0].is_of_type<FB::JSObjectPtr>())
+		transaction(StringVector(), timeout);
+	else if(values[0].can_be_type<FB::JSObjectPtr>())
 		try
-			{ transaction(values[0].cast<StringVector>()), timeout); }
+			{ transaction(values[0].convert_cast<StringVector>(), timeout); }
 		catch(FB::bad_variant_cast)
 			{ throw FB::invalid_arguments(); }
+	else if(values[0].can_be_type<string>())
+		transaction(values[0].convert_cast<string>(), timeout);
 	else
 		throw FB::invalid_arguments();
 	
-	if(!currentTransaction.is_initialized())
+	if(!currentTransaction)
 		throw DatabaseException("UNKNOWN_ERR", DatabaseException::UNKNOWN_ERR );
 	else
-		return static_cast<FB::JSAPIPtr>(currentTransaction.get());
+		return currentTransaction;
 	}
 
-boost::shared_ptr<TransactionSync> DatabaseSync::transaction(optional<StringVector>& storeNames, const optional<unsigned int>& timeout)
+boost::shared_ptr<TransactionSync> DatabaseSync::transaction(const StringVector& inStoreNames, const optional<unsigned int>& timeout)
 	{
-	if(currentTransaction.is_initialized())
+	if(getCurrentTransaction())
 		throw DatabaseException("NOT_ALLOWED_ERR", DatabaseException::NOT_ALLOWED_ERR);
-	else if(storeNames.is_initialized())
+	else if(inStoreNames.size())
 		{
 		StringVector objectStoreNames = getObjectStoreNames();
-		sort(storeNames->begin(), storeNames->end());
+        StringVector storeNames(inStoreNames);
+		sort(storeNames.begin(), storeNames.end());
 		sort(objectStoreNames.begin(), objectStoreNames.end());
 
 		// Ensure that the passed-in object store names actually exist in our database
-		if(!std::includes(storeNames->begin(), storeNames->end(), objectStoreNames.begin(), objectStoreNames.end()))
+		if(!std::includes(storeNames.begin(), storeNames.end(), objectStoreNames.begin(), objectStoreNames.end()))
 			throw DatabaseException("NOT_FOUND_ERR", DatabaseException::NOT_FOUND_ERR);
 
 		ObjectStoreSyncList objectStores;
-		for_each(storeNames->begin(), storeNames->end(), 
-			MapObjectStoreNameToObjectStoreFunctor(*this, objectStores));
+		for_each(storeNames.begin(), storeNames.end(), 
+			MapObjectStoreNameToObjectStoreFunctor(FB::ptr_cast<DatabaseSync>(shared_from_this()), objectStores));
 		
-		currentTransaction = boost::make_shared<TransactionSync>(*this, transactionFactory, objectStores, timeout);
+		currentTransaction = boost::shared_ptr<TransactionSync>(
+            new TransactionSync(FB::ptr_cast<DatabaseSync>(shared_from_this()), transactionFactory, objectStores, timeout)
+            );
 		}
 	else
-		currentTransaction = boost::make_shared<TransactionSync>(*this, transactionFactory, ObjectStoreSyncList(), timeout);
+		currentTransaction = boost::shared_ptr<TransactionSync>(
+            new TransactionSync(FB::ptr_cast<DatabaseSync>(shared_from_this()), transactionFactory, ObjectStoreSyncList(), timeout)
+            );
 
-	if(!currentTransaction.is_initialized())
+	if(getCurrentTransaction())
 		throw DatabaseException("UNKNOWN_ERR", DatabaseException::UNKNOWN_ERR );
 	else
-		return currentTransaction.get();
+		return FB::ptr_cast<TransactionSync>(getCurrentTransaction());
 	}
 
-optional<Transaction&> DatabaseSync::getCurrentTransaction() const
+TransactionPtr DatabaseSync::getCurrentTransaction() const
 	{
-	return currentTransaction.is_initialized()
-		? *currentTransaction.get()
-		: optional<Transaction&>();
+	return currentTransaction;
 	}
 
-FB::variant DatabaseSync::getCurrentTransactionVariant() const
-	{ 
-	return currentTransaction.is_initialized()
-		? static_cast<FB::JSAPIPtr>(currentTransaction.get())
-		: FB::variant();
-	}
-
-void DatabaseSync::onTransactionCommitted(const Transaction& transaction)
+void DatabaseSync::onTransactionCommitted(const TransactionPtr& transaction)
 	{ 
 	openObjectStores.raiseTransactionCommitted(transaction);
 	this->currentTransaction.reset(); 
 	}
 
-void DatabaseSync::onTransactionAborted(const Transaction& transaction)
+void DatabaseSync::onTransactionAborted(const TransactionPtr& transaction)
 	{ 
 	openObjectStores.raiseTransactionAborted(transaction);
 	this->currentTransaction.reset(); 
 	}
 
 std::string DatabaseSync::getOrigin()
-	{ return host->getDOMDocument().getProperty<string>("domain"); }
+	{ return host->getDOMDocument()->getProperty<string>("domain"); }
 
 }
 }

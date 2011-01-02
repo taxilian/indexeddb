@@ -41,7 +41,7 @@ class DatabaseSync : public Database
 		// Gets the origin of this database
 		std::string getOrigin();
 
-		virtual boost::optional<TransactionPtr> getCurrentTransaction() const;
+		virtual TransactionPtr getCurrentTransaction() const;
 
 		virtual std::vector<std::string> getObjectStoreNames()
 			{ return metadata.getMetadataCollection("objectStores", transactionFactory.getTransactionContext()); }
@@ -62,7 +62,7 @@ class DatabaseSync : public Database
 		virtual void setVersion(const std::string& version);
 	    
 		// Initiate a transaction on this database (the API supports exactly one such transaction at a time)
-		boost::shared_ptr<TransactionSync> transaction(boost::optional<StringVector>& storeNames, const boost::optional<unsigned int>& timeout);
+		boost::shared_ptr<TransactionSync> transaction(const StringVector& inStoreNames, const boost::optional<unsigned int>& timeout);
 
 	protected:
 		// This is undefined in the spec, but required
@@ -79,19 +79,19 @@ class DatabaseSync : public Database
 		// This method converts the optional transaction field into a FireBreath-compatible variant
 		virtual FB::variant getCurrentTransactionVariant() const;
 
+		// We need to be notified if a transaction is aborted or committed, so we can clear our current transaction
+		virtual void onTransactionAborted(const TransactionPtr& transaction);
+		virtual void onTransactionCommitted(const TransactionPtr& transaction);
+
 	protected:
 		// We maintain a weak list of object stores, mostly to ensure they're closed before we close this instance
-		Support::Container<boost::weak_ptr<ObjectStoreSync> > openObjectStores;
-
-		// We need to be notified if a transaction is aborted or committed, so we can clear our current transaction
-		virtual void onTransactionAborted(const Transaction& transaction);
-		virtual void onTransactionCommitted(const Transaction& transaction);
+		Support::Container<ObjectStoreSync> openObjectStores;
 
 	private:
 		// Maintain a reference to our underlying implementation
 		const std::auto_ptr<Implementation::Database> implementation;
 		// Maintain a shared pointer to our current transaction
-		boost::optional<boost::shared_ptr<TransactionSync>> currentTransaction;
+		boost::shared_ptr<TransactionSync> currentTransaction;
 		// Maintain a reference to a transaction factory, to get current context and initiate new transactions
 		RootTransactionFactory transactionFactory;
 		// Maintain a reference to our underlying metadata store
@@ -115,6 +115,7 @@ class DatabaseSync : public Database
 			};
 
 		friend Implementation::TransactionContext RootTransactionFactory::getTransactionContext() const;
+        friend class Support::Container<ObjectStoreSync>;
 	};
 
 }

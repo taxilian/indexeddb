@@ -37,7 +37,7 @@ class ObjectStoreSync : public ObjectStore
     protected:
         boost::shared_ptr<Support::LifeCycleObservable<ObjectStoreSync> > _observable;
 
-	public:
+	public: 
 		// Create an object store, with or without a key path
 		ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const std::string& keyPath, const bool autoIncrement);
 		ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, Implementation::TransactionContext& transactionContext, Metadata& metadata, const std::string& name, const bool autoIncrement);
@@ -58,7 +58,7 @@ class ObjectStoreSync : public ObjectStore
 		void remove(FB::variant key);
 
 		// Open a new cursor over this object store, bounded by the given range
-		boost::shared_ptr<CursorSync> openCursor(const boost::optional<KeyRange> range, const Cursor::Direction direction);
+		boost::shared_ptr<CursorSync> openCursor(const KeyRangePtr& range, const Cursor::Direction direction);
 
 		// Create a new index over this object store
 		boost::shared_ptr<IndexSync> createIndex(const std::string name, const boost::optional<std::string> keyPath, const bool unique); //raises (DatabaseException);
@@ -93,14 +93,13 @@ class ObjectStoreSync : public ObjectStore
 		FB::variant generateKey(FB::variant value);
 
     public:
-        typedef boost::shared_ptr<LifeCycleObserver<ObjectStoreSync> > LifeCycleObserverPtr;
+        typedef boost::shared_ptr<Support::LifeCycleObserver<ObjectStoreSync> > LifeCycleObserverPtr;
         // Forwarding methods for the embedded Observable
 		void addLifeCycleObserver(const LifeCycleObserverPtr& observer);
 		void removeLifeCycleObserver(const LifeCycleObserverPtr& observer);
-			{ observers.remove(observer);}
 		// This class receives messages that notify of committed and aborted transactions within the database scope
-		virtual void onTransactionAborted(const Transaction& transaction);
-		virtual void onTransactionCommitted(const Transaction& transaction);
+		virtual void onTransactionAborted(const TransactionPtr& transaction);
+		virtual void onTransactionCommitted(const TransactionPtr& transaction);
 
 	private:
 		// We own a pointer to our implementation

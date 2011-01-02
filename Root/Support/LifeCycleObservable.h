@@ -28,7 +28,7 @@ namespace Support {
 /// TODO: Pretty sure we can refactor out the transactional methods here; there's no need to chain these
 ///</summary>
 template<class T>
-class LifeCycleObservable : boost::enable_shared_from_this<LifeCycleObservable<T> >
+class LifeCycleObservable : public boost::enable_shared_from_this<LifeCycleObservable<T> >
 	{
 	public:
         typedef boost::shared_ptr<LifeCycleObservable<T> > LifeCycleObservablePtr;
@@ -38,11 +38,23 @@ class LifeCycleObservable : boost::enable_shared_from_this<LifeCycleObservable<T
 		void addLifeCycleObserver(const LifeCycleObserverPtr& observer)
 			{ observers.push_back(observer); }
 
+        struct removeWeakPtr : public std::unary_function<boost::weak_ptr<T>, bool>
+        {
+            removeWeakPtr(const LifeCycleObserverWeakPtr& ptr) : inner(ptr) { }
+
+            LifeCycleObserverWeakPtr inner;
+            bool operator()(const LifeCycleObserverWeakPtr& b) {
+                return inner.lock() == b.lock();
+            }
+        };
+
+        virtual boost::shared_ptr<T> get_object() { return FB::ptr_cast<T>(shared_from_this()); }
+
 		// Remove an observer from this observable class
 		void removeLifeCycleObserver(const LifeCycleObserverPtr& observer)
-			{ observers.remove(observer);}
+			{ observers.remove_if(removeWeakPtr(observer));}
 
-	protected:
+	public:
 		// These methods are executed when the derived class wishes to fire the transaction event
 		virtual void onTransactionCommitted(const TransactionPtr& transaction) = 0;
 		virtual void onTransactionAborted(const TransactionPtr& transaction) = 0;
@@ -51,7 +63,7 @@ class LifeCycleObservable : boost::enable_shared_from_this<LifeCycleObservable<T
 		// observers of this fact
 		void raiseOnCloseEvent()
 			{ 
-			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(shared_from_this())); 
+			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(get_object())); 
 			observers.clear();
 			}
 
@@ -62,13 +74,14 @@ class LifeCycleObservable : boost::enable_shared_from_this<LifeCycleObservable<T
 		// Functor that calls the onClose event on a given observer
 		struct ExecuteCloseFunctor
 			{
-			LifeCycleObservablePtr observable;
-			ExecuteCloseFunctor(const LifeCycleObservablePtr& observable) 
+			const boost::shared_ptr<T> observable;
+			ExecuteCloseFunctor(const boost::shared_ptr<T>& observable) 
 				: observable(observable) { }
 
 			void operator ()(const LifeCycleObserverWeakPtr& observer) 
 			    {
-                if (LifeCycleObserverPtr p(observer.lock()))
+                LifeCycleObserverPtr p(observer.lock());
+                if (p)
                     {
                     p->onClose(observable);
                     }

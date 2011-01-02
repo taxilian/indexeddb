@@ -1,7 +1,9 @@
+#include <boost/make_shared.hpp>
 #include "IndexedDatabasePluginAPI.h"
 #include "Root/API/KeyRange.h"
 #include "Root/API/Cursor.h"
 
+using BrandonHaynes::IndexedDB::API::KeyRange;
 IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHostPtr host) 
 	: host(host), EnvironmentSync(host)
 	{
@@ -11,7 +13,7 @@ IndexedDatabasePluginAPI::IndexedDatabasePluginAPI(FB::BrowserHostPtr host)
 	}
 
 FB::JSAPIPtr IndexedDatabasePluginAPI::getKeyRange()
-	{ return new BrandonHaynes::IndexedDB::API::KeyRange(); }
+	{ return boost::shared_ptr<KeyRange>(new KeyRange()); }
 
 FB::JSAPIPtr IndexedDatabasePluginAPI::getCursor()
-	{ return static_cast<FB::JSAPIPtr>(BrandonHaynes::IndexedDB::API::Cursor::getInstance()); }
+	{ return BrandonHaynes::IndexedDB::API::Cursor::getInstance(); }

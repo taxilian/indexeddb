@@ -7,6 +7,11 @@ cmake_minimum_required (VERSION 2.6)
 set (CMAKE_BACKWARDS_COMPATIBILITY 2.6)
 
 include(${CMAKE_DIR}/common.cmake)
+include(FindBerkeleyDB.cmake)
+
+add_boost_library(date_time)
+add_boost_library(filesystem)
+add_boost_library(system)
 
 set (PROJNAME ${PLUGIN_NAME})
 

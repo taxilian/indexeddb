@@ -23,10 +23,10 @@ Key KeyGeneratorHelper::generateKey(const Data& context) const
 
 const FB::variant KeyGeneratorHelper::generateKey(FB::variant value) const
 	{
-	if(!value.is_of_type<FB::JSObject>())
+	if(!value.can_be_type<FB::JSObjectPtr>())
 		return FB::variant();
 	else 
-		return value.cast<FB::JSObject>()->GetProperty(keyPath);
+		return value.convert_cast<FB::JSObjectPtr>()->GetProperty(keyPath);
 	}
 
 }

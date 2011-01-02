@@ -17,20 +17,23 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-class ObjectStoreSync;
-class IndexSync;
-class KeyRange;
+FB_FORWARD_PTR(ObjectStoreSync);
+FB_FORWARD_PTR(IndexSync);
+FB_FORWARD_PTR(KeyRange);
 
 ///<summary>
 /// This class represents a synchronized cursor as defined by the Indexed Database API.
 ///</summary>
-class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync>
+class CursorSync : public Cursor
 	{
+    protected:
+        typedef boost::shared_ptr<Support::LifeCycleObserver<CursorSync> > LifeCycleObserverPtr;
+        boost::shared_ptr<Support::LifeCycleObservable<CursorSync> > _observable;
 	public:
 		// This constructor creates a cursor over the given object store
-		CursorSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction);
+		CursorSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, const KeyRangePtr& range, const Cursor::Direction direction);
 		// This constructor creates a cursor over the given index
-		CursorSync(FB::BrowserHostPtr host, IndexSync& index, TransactionFactory& transactionFactory, const boost::optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys);
+		CursorSync(FB::BrowserHostPtr host, const IndexSyncPtr& index, TransactionFactory& transactionFactory, const KeyRangePtr& range, const Cursor::Direction direction, const bool returnKeys);
 		virtual ~CursorSync(void);
 
 		// Gets the key associated with the current cursor position
@@ -46,11 +49,14 @@ class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync
 		// Close this cursor
 		void close();
 
-	protected:
+	public:
+        // Forwarding methods for the embedded Observable
+		void addLifeCycleObserver(const LifeCycleObserverPtr& observer);
+		void removeLifeCycleObserver(const LifeCycleObserverPtr& observer);
 		// By being lifecycle-observable, this object will receive messages when an associated transaction is 
 		// aborted or committed.  We don't need any of that implementation here.
-		virtual void onTransactionAborted(const Transaction& transaction) { }
-		virtual void onTransactionCommitted(const Transaction& transaction) { }
+		virtual void onTransactionAborted(const TransactionPtr& transaction) { }
+		virtual void onTransactionCommitted(const TransactionPtr& transaction) { }
 
 	private:
 		// The underlying implementation for this cursor
@@ -61,11 +67,11 @@ class CursorSync : public Cursor, public Support::LifeCycleObservable<CursorSync
 		TransactionFactory transactionFactory;
 
 		// Cursors may or may not have an associated range
-		const boost::optional<KeyRange> range;
+		const KeyRangePtr range;
 		const bool readOnly;
 
 		void initializeMethods();
-	};
+};
 
 }
 }

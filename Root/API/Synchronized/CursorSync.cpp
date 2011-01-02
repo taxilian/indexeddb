@@ -10,6 +10,7 @@ GNU Lesser General Public License
 #include "../../Implementation/Cursor.h"
 #include "../../Implementation/AbstractDatabaseFactory.h"
 #include "../../Support/Convert.h"
+#include "../../Support/privateObservable.h"
 #include "../DatabaseException.h"
 
 using boost::optional;
@@ -23,17 +24,27 @@ using Implementation::ImplementationException;
 
 namespace API { 
 
-CursorSync::CursorSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction)
+void CursorSync::addLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->addLifeCycleObserver(observer);
+}
+
+void CursorSync::removeLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->removeLifeCycleObserver(observer);
+}
+
+CursorSync::CursorSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, const KeyRangePtr& range, const Cursor::Direction direction)
 	: Cursor(direction), 
 	  transactionFactory(transactionFactory),
-	  readOnly(objectStore.getMode() != Implementation::ObjectStore::READ_WRITE),
+	  readOnly(objectStore->getMode() != Implementation::ObjectStore::READ_WRITE),
 	  host(host), range(range),
 	  implementation(AbstractDatabaseFactory::getInstance().openCursor(
-		objectStore.getImplementation(), 
-		range.is_initialized() ? Convert::toKey(host, range->getLeft()) : Key::getUndefinedKey(),
-		range.is_initialized() ? Convert::toKey(host, range->getRight()) : Key::getUndefinedKey(),
-		range.is_initialized() ? range->getFlags() & KeyRange::LEFT_OPEN : false,
-		range.is_initialized() ? range->getFlags() & KeyRange::RIGHT_OPEN : false,
+		objectStore->getImplementation(), 
+		range ? Convert::toKey(host, range->getLeft()) : Key::getUndefinedKey(),
+		range ? Convert::toKey(host, range->getRight()) : Key::getUndefinedKey(),
+		range ? range->getFlags() & KeyRange::LEFT_OPEN : false,
+		range ? range->getFlags() & KeyRange::RIGHT_OPEN : false,
 		direction == Cursor::PREV || direction == Cursor::PREV_NO_DUPLICATE,
 		direction == Cursor::NEXT_NO_DUPLICATE || direction == Cursor::PREV_NO_DUPLICATE, 
 		transactionFactory.getTransactionContext()))
@@ -41,16 +52,16 @@ CursorSync::CursorSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, Tr
 	initializeMethods();
 	}
 
-CursorSync::CursorSync(FB::BrowserHostPtr host, IndexSync& index, TransactionFactory& transactionFactory, const optional<KeyRange>& range, const Cursor::Direction direction, const bool returnKeys)
+CursorSync::CursorSync(FB::BrowserHostPtr host, const IndexSyncPtr& index, TransactionFactory& transactionFactory, const KeyRangePtr& range, const Cursor::Direction direction, const bool returnKeys)
 	: Cursor(direction), readOnly(false),
 	  transactionFactory(transactionFactory),
 	  host(host), range(range),
 	  implementation(AbstractDatabaseFactory::getInstance().openCursor(
-		*index.implementation, 
-		range.is_initialized() ? Convert::toKey(host, range->getLeft()) : Key::getUndefinedKey(),
-		range.is_initialized() ? Convert::toKey(host, range->getRight()) : Key::getUndefinedKey(),
-		range.is_initialized() ? range->getFlags() & KeyRange::LEFT_OPEN : false,
-		range.is_initialized() ? range->getFlags() & KeyRange::RIGHT_OPEN : false,
+		*(index->implementation), 
+		range ? Convert::toKey(host, range->getLeft()) : Key::getUndefinedKey(),
+		range ? Convert::toKey(host, range->getRight()) : Key::getUndefinedKey(),
+		range ? range->getFlags() & KeyRange::LEFT_OPEN : false,
+		range ? range->getFlags() & KeyRange::RIGHT_OPEN : false,
 		direction == Cursor::PREV || direction == Cursor::PREV_NO_DUPLICATE,
 		direction == Cursor::NEXT_NO_DUPLICATE || direction == Cursor::PREV_NO_DUPLICATE,
 		returnKeys,
@@ -60,10 +71,14 @@ CursorSync::CursorSync(FB::BrowserHostPtr host, IndexSync& index, TransactionFac
 	}
 
 CursorSync::~CursorSync()
-	{ this->close(); }
+	{
+    this->close();
+    FB::ptr_cast<Support::_privateObservable<CursorSync> >(_observable)->invalidate();
+    }
 
 void CursorSync::initializeMethods()
 	{
+    _observable = boost::make_shared<Support::_privateObservable<CursorSync> >(this);
 	registerProperty("key", make_property(this, &CursorSync::getKey));
 	registerProperty("value", make_property(this, &CursorSync::getValue));
 	registerProperty("count", make_property(this, &CursorSync::getCount));
@@ -123,7 +138,7 @@ void CursorSync::remove()
 
 void CursorSync::close()
 	{
-	this->raiseOnCloseEvent();
+	_observable->raiseOnCloseEvent();
 	this->implementation->close(); 
 	}
 

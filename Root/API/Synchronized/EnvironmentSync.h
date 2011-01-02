@@ -14,6 +14,7 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+FB_FORWARD_PTR(IndexedDatabase);
 ///<summary>
 /// This class represents a database environment.  It is both the entry-point into the API, and also
 /// the interface-point between FireBreath code and our project.
@@ -21,13 +22,13 @@ namespace API {
 class EnvironmentSync : public FB::JSAPIAuto
 {
 public:
-	EnvironmentSync(FB::BrowserHostPtr host);
+	EnvironmentSync(const FB::BrowserHostPtr& host);
 
 	// Per spec, returns a reference to the IndexedDB API handle
 	FB::JSAPIPtr getIndexedDB();
 
 private:
-	boost::shared_ptr<IndexedDatabase> indexedDB;
+	IndexedDatabasePtr indexedDB;
 };
 
 }

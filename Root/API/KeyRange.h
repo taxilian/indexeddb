@@ -15,6 +15,8 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+class KeyRange;
+typedef boost::shared_ptr<KeyRange> KeyRangePtr;
 ///<summary>
 /// This class represents a range of keys as defined by the Indexed Database API.
 /// Key ranges have a left and right bound along with a set of associated flags
@@ -32,13 +34,13 @@ class KeyRange : public FB::JSAPIAuto
 
 		// Factory methods for KeyRange instances
 		// Create a range composed of exactly one key
-		boost::shared_ptr<KeyRange> only(FB::variant value);
+		KeyRangePtr only(FB::variant value);
 		// Create a range between (left, right) with optional open left/right ends
-		boost::shared_ptr<KeyRange> bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight);
+		KeyRangePtr bound(FB::variant left, FB::variant right, const bool openLeft, const bool openRight);
 		// Create a key range between (left, +infinity) with optional open left
-		boost::shared_ptr<KeyRange> leftBound(FB::variant bound, const bool open);
+		KeyRangePtr leftBound(FB::variant bound, const bool open);
 		// Create a key range between (-infinity, right) with optional open right
-		boost::shared_ptr<KeyRange> rightBound(FB::variant bound, const bool open);
+		KeyRangePtr rightBound(FB::variant bound, const bool open);
 
 	private:
 		// Private stub method to generate a KeyRange instance.  This instance is exposed to user

@@ -21,8 +21,8 @@ namespace API {
 
 Implementation::TransactionContext RootTransactionFactory::getTransactionContext() const
 	{ 
-	return database->currentTransaction.is_initialized()
-		? (database->currentTransaction.get())->getTransactionContext()
+	return database->currentTransaction
+		? database->currentTransaction->getTransactionContext()
 		: TransactionContext();
 	}
 

@@ -10,6 +10,7 @@ GNU Lesser General Public License
 #include "../../Implementation/Index.h"
 #include "../../Implementation/KeyGenerator.h"
 #include "../../Implementation/AbstractDatabaseFactory.h"
+#include "../../Support/privateObservable.h"
 #include "../../Support/KeyPathKeyGenerator.h"
 #include "../../Support/Convert.h"
 #include "../DatabaseException.h"
@@ -28,8 +29,18 @@ using Implementation::Data;
 
 namespace API { 
 
-IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name)
-	: Index(name, objectStore.getName()), 
+void IndexSync::addLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->addLifeCycleObserver(observer);
+}
+
+void IndexSync::removeLifeCycleObserver( const LifeCycleObserverPtr& observer )
+{
+    _observable->removeLifeCycleObserver(observer);
+}
+
+IndexSync::IndexSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name)
+	: Index(name, objectStore->getName()), 
 	  transactionFactory(transactionFactory),
 	  metadata(metadata, Metadata::Index, name),
 	  host(host)
@@ -41,14 +52,14 @@ IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, Tran
 		: NULL);
 	implementation = keyPath.is_initialized()
 		? Implementation::AbstractDatabaseFactory::getInstance().openIndex(
-			objectStore.getImplementation(), name, keyGenerator, unique, transactionFactory.getTransactionContext())
+			objectStore->getImplementation(), name, keyGenerator, unique, transactionFactory.getTransactionContext())
 		: Implementation::AbstractDatabaseFactory::getInstance().openIndex(
-			objectStore.getImplementation(), name, unique, transactionFactory.getTransactionContext());
+			objectStore->getImplementation(), name, unique, transactionFactory.getTransactionContext());
 	initializeMethods();
 	}
 
-IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name, const optional<string>& keyPath, const bool unique)
-	: Index(name, objectStore.getName(), keyPath, unique), 
+IndexSync::IndexSync(FB::BrowserHostPtr host, const ObjectStoreSyncPtr& objectStore, TransactionFactory& transactionFactory, Metadata& metadata, const string& name, const optional<string>& keyPath, const bool unique)
+	: Index(name, objectStore->getName(), keyPath, unique), 
 	  transactionFactory(transactionFactory),
 	  host(host),
 	  metadata(metadata, Metadata::Index, name),
@@ -57,19 +68,23 @@ IndexSync::IndexSync(FB::BrowserHostPtr host, ObjectStoreSync& objectStore, Tran
 		: NULL),
 	  implementation(keyPath.is_initialized()
 		? Implementation::AbstractDatabaseFactory::getInstance().createIndex(
-			objectStore.getImplementation(), name, keyGenerator, unique, transactionFactory.getTransactionContext())
+			objectStore->getImplementation(), name, keyGenerator, unique, transactionFactory.getTransactionContext())
 		: Implementation::AbstractDatabaseFactory::getInstance().createIndex(
-			objectStore.getImplementation(), name, unique, transactionFactory.getTransactionContext()))
+			objectStore->getImplementation(), name, unique, transactionFactory.getTransactionContext()))
 	{ 
 	createMetadata(keyPath, unique);
 	initializeMethods(); 
 	}
 
 IndexSync::~IndexSync(void)
-	{ close(); }
+	{
+    close();
+    FB::ptr_cast<Support::_privateObservable<IndexSync> >(_observable)->invalidate();
+    }
 
 void IndexSync::initializeMethods()
 	{
+    _observable = boost::make_shared<Support::_privateObservable<IndexSync> >(this);
 	registerMethod("get", make_method(this, &IndexSync::get));
 	registerMethod("getObject", make_method(this, &IndexSync::getObject));
 	registerMethod("put", make_method(this, &IndexSync::put));
@@ -142,7 +157,7 @@ void IndexSync::remove(FB::variant key)
 
 void IndexSync::close()
 	{ 
-	this->raiseOnCloseEvent();
+	_observable->raiseOnCloseEvent();
 	openCursors.release();
 	this->implementation->close(); 
 	}
@@ -151,59 +166,77 @@ FB::JSAPIPtr IndexSync::openCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
-	if(values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() >= 1 && !values[0].empty() &&
-			(!values[0].is_of_type<FB::JSObject>() ||
- 			 !values[0].cast<FB::JSObject>()->HasProperty("left") || 
-			 !values[0].cast<FB::JSObject>()->HasProperty("right") ||
-			 !values[0].cast<FB::JSObject>()->HasProperty("flags") ||
-			 !values[0].cast<FB::JSObject>()->GetProperty("flags").is_of_type<int>()))
-				throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<int>())
+    if (!values.size() || values[0].empty())
+        return openCursor(KeyRangePtr(), Cursor::NEXT, true);
+
+	if(values.size() > 2 || !values.size())
 		throw FB::invalid_arguments();
 
-	optional<KeyRange> range = values.size() >= 1 && !values[0].empty()
-		? KeyRange(values[0].cast<FB::JSObject>()->GetProperty("left"),
-			values[0].cast<FB::JSObject>()->GetProperty("right"),
-			values[0].cast<FB::JSObject>()->GetProperty("flags").cast<int>())
-		: optional<KeyRange>();
-	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
+    int flags = 0;
+    try {
+        FB::VariantMap info = values[0].convert_cast<FB::VariantMap>();
+        if (info.find("right") == info.end() |
+            info.find("left") == info.end() |
+            info.find("flags") == info.end()) {
+            throw FB::invalid_arguments();
+        }
+        if (values.size() > 1 && values[1].can_be_type<int>()) {
+            flags = values[1].convert_cast<int>();
+        } else if(values.size() == 2) {
+            flags = info["flags"].convert_cast<int>();
+        }
 
-	return static_cast<FB::JSAPIPtr>(openCursor(range, direction, true));
+        KeyRangePtr range(boost::make_shared<KeyRange>(info["left"], info["right"], flags));
+    	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(flags) : Cursor::NEXT;
+
+    	return openCursor(range, direction, true);
+        }
+    catch (const FB::bad_variant_cast&)
+        {
+        throw FB::invalid_arguments();
+        }
 	}
 
 FB::JSAPIPtr IndexSync::openObjectCursor(const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 
-	if(values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() >= 1 && 
-		(!values[0].is_of_type<FB::JSObject>() ||
- 		 !values[0].cast<FB::JSObject>()->HasProperty("left") || 
-		 !values[0].cast<FB::JSObject>()->HasProperty("right") ||
-		 !values[0].cast<FB::JSObject>()->HasProperty("flags") ||
-		 !values[0].cast<FB::JSObject>()->GetProperty("flags").is_of_type<int>()))
-			throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<int>())
-		throw FB::invalid_arguments();
+    if (!values.size() || values[0].empty())
+        return openCursor(KeyRangePtr(), Cursor::NEXT, false);
 
-	optional<KeyRange> range = values.size() >= 1
-		? KeyRange(values[0].cast<FB::JSObject>()->GetProperty("left"),
-			values[0].cast<FB::JSObject>()->GetProperty("right"),
-			values[0].cast<FB::JSObject>()->GetProperty("flags").cast<int>())
-		: optional<KeyRange>();
-	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(values[1].cast<int>()) : Cursor::NEXT;
+    int flags = 0;
+    try {
+        FB::VariantMap info = values[0].convert_cast<FB::VariantMap>();
+        if (info.find("right") == info.end() |
+            info.find("left") == info.end() |
+            info.find("flags") == info.end()) {
+            throw FB::invalid_arguments();
+        }
+        if (values.size() > 1 && !values[1].can_be_type<int>()) {
+            throw FB::invalid_arguments();
+        } 
+        flags = info["flags"].convert_cast<int>();
 
-	return static_cast<FB::JSAPIPtr>(openCursor(range, direction, false));
+        KeyRangePtr range(boost::make_shared<KeyRange>(info["left"], info["right"], flags));
+
+    	const Cursor::Direction direction =
+            values.size() == 2 ? static_cast<Cursor::Direction>(values[1].convert_cast<int>()) : Cursor::NEXT;
+
+    	return openCursor(range, direction, false);
+        }
+    catch (const FB::bad_variant_cast&)
+        {
+        throw FB::invalid_arguments();
+        }
 	}
 
-boost::shared_ptr<CursorSync> IndexSync::openCursor(const optional<KeyRange>& range, const Cursor::Direction direction, const bool dataArePrimaryKeys)
+boost::shared_ptr<CursorSync> IndexSync::openCursor(const KeyRangePtr& range, const Cursor::Direction direction, const bool dataArePrimaryKeys)
 	{ 
 	try
 		{ 
-		boost::shared_ptr<CursorSync> cursor = new CursorSync(host, *this, transactionFactory, range, direction, dataArePrimaryKeys); 
+		CursorSyncPtr cursor(
+            new CursorSync(host, FB::ptr_cast<IndexSync>(shared_from_this()), transactionFactory, range, direction, dataArePrimaryKeys)
+            );
 		openCursors.add(cursor);
 		return cursor;
 		}
@@ -237,13 +270,13 @@ void IndexSync::loadMetadata()
 	transaction->commit();
 	}
 
-void IndexSync::onTransactionCommitted(const Transaction& transaction)
+void IndexSync::onTransactionCommitted(const TransactionPtr& transaction)
 	{ 
 	openCursors.raiseTransactionCommitted(transaction); 
 	openCursors.release();
 	}
 
-void IndexSync::onTransactionAborted(const Transaction& transaction)
+void IndexSync::onTransactionAborted(const TransactionPtr& transaction)
 	{ 
 	openCursors.raiseTransactionAborted(transaction); 
 	openCursors.release();
