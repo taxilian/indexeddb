@@ -16,6 +16,6 @@ namespace Implementation {
 		static BerkeleyDB::BerkeleyDatabaseFactory instance;
 		return static_cast<AbstractDatabaseFactory&>(instance); 
 		}
-	}
+}
 }
 }

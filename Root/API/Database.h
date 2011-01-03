@@ -49,9 +49,6 @@ namespace IndexedDB {
 
 			virtual void setVersion(const std::string& version) = 0;
 
-			// Internal method to convert the current transac
-			virtual FB::variant getCurrentTransactionVariant() const = 0;
-
 			// Methods by which a Transaction instance notifies its parent database that it has committed or aborted
 			virtual void onTransactionCommitted(const TransactionPtr& transaction) = 0;
 			virtual void onTransactionAborted(const TransactionPtr& transaction) = 0;

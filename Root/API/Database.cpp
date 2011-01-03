@@ -18,7 +18,7 @@ Database::Database(const std::string& name, const std::string& description)
 	registerProperty("version", make_property(this, &Database::getVersionVariant));
 	registerProperty("objectStores", make_property(this, &Database::getObjectStoreVariants));
 	registerProperty("indexes", make_property(this, &Database::getIndexVariants));
-	registerProperty("currentTransaction", make_property(this, &Database::getCurrentTransactionVariant));
+	registerProperty("currentTransaction", make_property(this, &Database::getCurrentTransaction));
 	}
 
 std::string Database::getName() const

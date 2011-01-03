@@ -9,10 +9,6 @@ set (CMAKE_BACKWARDS_COMPATIBILITY 2.6)
 include(${CMAKE_DIR}/common.cmake)
 include(FindBerkeleyDB.cmake)
 
-add_boost_library(date_time)
-add_boost_library(filesystem)
-add_boost_library(system)
-
 set (PROJNAME ${PLUGIN_NAME})
 
 browserplugin_project(${PROJNAME})
@@ -69,6 +65,7 @@ SET( SOURCES
     ${SYNC_FILES}
     ${API_FILES}
     ${BERK_FILES}
+    ${IMPL_FILES}
     ${SUPPORT_FILES}
     ${GENERATED}
     )

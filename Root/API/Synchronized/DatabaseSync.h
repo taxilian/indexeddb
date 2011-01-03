@@ -76,9 +76,6 @@ class DatabaseSync : public Database
 
 		FB::JSAPIPtr transaction(const FB::CatchAll& args);
 
-		// This method converts the optional transaction field into a FireBreath-compatible variant
-		virtual FB::variant getCurrentTransactionVariant() const;
-
 		// We need to be notified if a transaction is aborted or committed, so we can clear our current transaction
 		virtual void onTransactionAborted(const TransactionPtr& transaction);
 		virtual void onTransactionCommitted(const TransactionPtr& transaction);

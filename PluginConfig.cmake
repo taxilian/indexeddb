@@ -40,3 +40,7 @@ set(FBSTRING_FileExtents "")
 set(FBSTRING_PluginName "Indexed Database APIPlugin")
 set(FBSTRING_MIMEType "application/x-indexeddatabase")
 
+add_boost_library(date_time)
+add_boost_library(filesystem)
+add_boost_library(system)
+
