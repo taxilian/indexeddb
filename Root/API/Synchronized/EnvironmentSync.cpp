@@ -15,7 +15,7 @@ EnvironmentSync::EnvironmentSync(const FB::BrowserHostPtr& host)
 	: indexedDB(boost::make_shared<IndexedDatabase>(host))
 	{ }
 
-FB::JSAPIPtr EnvironmentSync::getIndexedDB()
+IndexedDatabasePtr EnvironmentSync::getIndexedDB()
 	{ return indexedDB; }
 
 }

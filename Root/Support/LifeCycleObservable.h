@@ -63,7 +63,7 @@ class LifeCycleObservable : public boost::enable_shared_from_this<LifeCycleObser
 		// observers of this fact
 		void raiseOnCloseEvent()
 			{ 
-			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(get_object())); 
+			for_each(observers.begin(), observers.end(), ExecuteCloseFunctor(FB::ptr_cast<T>(shared_from_this()))); 
 			observers.clear();
 			}
 

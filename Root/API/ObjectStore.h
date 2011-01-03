@@ -24,8 +24,8 @@ namespace API {
 class ObjectStore : public FB::JSAPIAuto
 	{
 	public:
-		Implementation::ObjectStore::Mode getMode() const { return mode; }
-		std::string getName() const { return name; }
+		Implementation::ObjectStore::Mode getMode() const;
+		std::string getName() const;
 		virtual FB::variant getKeyPath() const = 0;
 		virtual std::vector<std::string> getIndexNames() const = 0;
 

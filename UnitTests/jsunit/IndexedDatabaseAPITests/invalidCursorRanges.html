@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>
     
     <head>
@@ -13,8 +14,11 @@
             var connection;
             var objectStore;
 
+            function db() {
+                return document.getElementById("db");
+            }
             function setUp() {
-                connection = db.indexedDB.open(makeRandomName(), "cursor range unit tests");
+                connection = db().indexedDB.open(makeRandomName(), "cursor range unit tests");
                 objectStore = connection.createObjectStore(makeRandomName(), null);
                 putValues(objectStore, 100);
             }
@@ -25,7 +29,7 @@
             }
 
             function testEmptyRange() {
-                var range = db.IDBKeyRange.bound('A', 'D');
+                var range = db().IDBKeyRange.bound('A', 'D');
 
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
@@ -33,42 +37,42 @@
             }
 
             function testEmptyNullRange() {
-                var range = db.IDBKeyRange.bound('D', 'D');
+                var range = db().IDBKeyRange.bound('D', 'D');
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
                 }, "NOT_FOUND_ERR");
             }
 
             function testEmptyOpenRange() {
-                var range = db.IDBKeyRange.bound('A', 'D', true);
+                var range = db().IDBKeyRange.bound('A', 'D', true);
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
                 }, "NOT_FOUND_ERR");
             }
 
             function testEmptyReverseRange() {
-                var range = db.IDBKeyRange.bound('D', 'A');
+                var range = db().IDBKeyRange.bound('D', 'A');
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
             function testEmptyNullReverseRange() {
-                var range = db.IDBKeyRange.bound('S', 'S');
+                var range = db().IDBKeyRange.bound('S', 'S');
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
             function testEmptyOpenReverseRange() {
-                var range = db.IDBKeyRange.bound('D', 'A', true, true);
+                var range = db().IDBKeyRange.bound('D', 'A', true, true);
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
             function testNullRange() {
-                var range = db.IDBKeyRange.bound(3, 3);
+                var range = db().IDBKeyRange.bound(3, 3);
 
                 var cursor = objectStore.openCursor(range);
                 assertEquals(3, cursor.key);
@@ -77,53 +81,53 @@
             }
 
             function testNullOpenRange() {
-                var range = db.IDBKeyRange.bound(22, 22, true);
+                var range = db().IDBKeyRange.bound(22, 22, true);
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
                 }, "NOT_FOUND_ERR");
             }
 
             function testNullReverseRange() {
-                var range = db.IDBKeyRange.bound(42, 42);
+                var range = db().IDBKeyRange.bound(42, 42);
 
-                var cursor = objectStore.openCursor(range, db.IDBCursor.PREV);
+                var cursor = objectStore.openCursor(range, db().IDBCursor.PREV);
                 assertEquals(42, cursor.key);
                 assertEquals('42value', cursor.value);
                 assertFalse(cursor["continue"]());
             }
 
             function testNullOpenReverseRange() {
-                var range = db.IDBKeyRange.bound(63, 63, true, true);
+                var range = db().IDBKeyRange.bound(63, 63, true, true);
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
             function testInvalidRange() {
-                var range = db.IDBKeyRange.bound(7, 3);
+                var range = db().IDBKeyRange.bound(7, 3);
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
                 }, "NOT_FOUND_ERR");
             }
 
             function testInvalidOpenRange() {
-                var range = db.IDBKeyRange.bound(7, 3, true, true);
+                var range = db().IDBKeyRange.bound(7, 3, true, true);
                 assertClosureThrows(function() {
                     objectStore.openCursor(range);
                 }, "NOT_FOUND_ERR");
             }
 
             function testInvalidReverseRange() {
-                var range = db.IDBKeyRange.bound(7, 3);
+                var range = db().IDBKeyRange.bound(7, 3);
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
             function testInvalidReverseOpenRange() {
-                var range = db.IDBKeyRange.bound(5, 2, true, true);
+                var range = db().IDBKeyRange.bound(5, 2, true, true);
                 assertClosureThrows(function() {
-                    objectStore.openCursor(range, db.IDBCursor.PREV);
+                    objectStore.openCursor(range, db().IDBCursor.PREV);
                 }, "NOT_FOUND_ERR");
             }
 
@@ -139,7 +143,7 @@
                 var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
 
                 assertClosureThrows(function() {
-                    objectStore.openCursor(db.IDBKeyRange.bound(5, 10))
+                    objectStore.openCursor(db().IDBKeyRange.bound(5, 10))
                 }, "NOT_FOUND_ERR");
             }
 
@@ -147,7 +151,7 @@
                 var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
 
                 assertClosureThrows(function() {
-                    objectStore.openCursor(db.IDBKeyRange, db.IDBCursor.PREV)
+                    objectStore.openCursor(db().IDBKeyRange, db().IDBCursor.PREV)
                 }, "NOT_FOUND_ERR");
             }
 
@@ -155,7 +159,7 @@
                 var objectStore = connection.createObjectStore(makeRandomName(), "keypath");
 
                 assertClosureThrows(function() {
-                    objectStore.openCursor(db.IDBKeyRange.bound(5, 10), db.IDBCursor.PREV)
+                    objectStore.openCursor(db().IDBKeyRange.bound(5, 10), db().IDBCursor.PREV)
                 }, "NOT_FOUND_ERR");
             }
         </script>

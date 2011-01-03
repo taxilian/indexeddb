@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html> 
  
 <head> 
@@ -8,8 +9,11 @@
     <script language="JavaScript" type="text/javascript">
         var database;
 
+        function db() {
+            return document.getElementById("db");
+        }
         function setUp() {
-            database = db.indexedDB.open(makeRandomName(), "Object store unit tests");
+            database = db().indexedDB.open(makeRandomName(), "Object store unit tests");
         }
 
         function tearDown() {
@@ -39,7 +43,7 @@
             var value = new Date();
             var objectStore = database.createObjectStore(makeRandomName(), null);
             objectStore.put(value, "key");
-            assertEquals(value, objectStore.get("key"));
+            assertEquals(value.toString(), new Date(objectStore.get("key")).toString());
         }
 
         function testPutObjectWithKeyPath() {

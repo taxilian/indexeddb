@@ -19,13 +19,15 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-class TransactionSync;
 
 ///<summary>
 /// This class represents a synchronized database in the Indexed Database API
 ///</summary>
-class DatabaseSync;
-typedef boost::shared_ptr<DatabaseSync> DatabaseSyncPtr;
+FB_FORWARD_PTR(DatabaseSync);
+FB_FORWARD_PTR(TransactionSync);
+FB_FORWARD_PTR(ObjectStoreSync);
+
+using std::string;
 
 class DatabaseSync : public Database
 	{
@@ -47,8 +49,6 @@ class DatabaseSync : public Database
 			{ return metadata.getMetadataCollection("objectStores", transactionFactory.getTransactionContext()); }
 
 		// Creates or opens an object store within this database
-		boost::shared_ptr<ObjectStoreSync> createObjectStore(const std::string& name, const bool autoIncrement);
-		boost::shared_ptr<ObjectStoreSync> createObjectStore(const std::string& name, const std::string& keyPath, const bool autoIncrement);
 		boost::shared_ptr<ObjectStoreSync> openObjectStore(const std::string& name, Implementation::ObjectStore::Mode mode);
 
 		// Removes an object store with the given name
@@ -62,7 +62,7 @@ class DatabaseSync : public Database
 		virtual void setVersion(const std::string& version);
 	    
 		// Initiate a transaction on this database (the API supports exactly one such transaction at a time)
-		boost::shared_ptr<TransactionSync> transaction(const StringVector& inStoreNames, const boost::optional<unsigned int>& timeout);
+		TransactionSyncPtr transaction(const StringVector& inStoreNames, const boost::optional<unsigned int>& timeout);
 
 	protected:
 		// This is undefined in the spec, but required
@@ -70,11 +70,14 @@ class DatabaseSync : public Database
 		FB::BrowserHostPtr host;
 
 		// These methods convert incoming user agent requests (via FireBreath) into strongly-typed calls
-		FB::JSAPIPtr createObjectStore(const std::string& name, const FB::CatchAll& args);
+        ObjectStoreSyncPtr createObjectStore(
+            const string& name,
+            const boost::optional<string>& keyPath,
+            boost::optional<bool> autoIncrement);
 		FB::JSAPIPtr openObjectStore(const std::string& name, const FB::CatchAll& args);
-		boost::shared_ptr<TransactionSync> transaction(const std::string& objectStoreName, const boost::optional<unsigned int>& timeout);
+		TransactionSyncPtr transaction(const std::string& objectStoreName, const boost::optional<unsigned int>& timeout);
 
-		FB::JSAPIPtr transaction(const FB::CatchAll& args);
+        TransactionSyncPtr transaction(const FB::variant& objStoreName, const boost::optional<unsigned int> timeout);
 
 		// We need to be notified if a transaction is aborted or committed, so we can clear our current transaction
 		virtual void onTransactionAborted(const TransactionPtr& transaction);
@@ -82,7 +85,7 @@ class DatabaseSync : public Database
 
 	protected:
 		// We maintain a weak list of object stores, mostly to ensure they're closed before we close this instance
-		Support::Container<ObjectStoreSync> openObjectStores;
+		boost::shared_ptr<Support::Container<ObjectStoreSync> > openObjectStores;
 
 	private:
 		// Maintain a reference to our underlying implementation

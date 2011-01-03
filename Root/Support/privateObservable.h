@@ -23,7 +23,11 @@ namespace BrandonHaynes {
                     void invalidate();
 
                     virtual boost::shared_ptr<T> get_object() {
-                        return FB::ptr_cast<T>(parent->shared_from_this());
+                        if (parent) {
+                            return FB::ptr_cast<T>(parent->shared_from_this());
+                        } else {
+                            return boost::shared_ptr<T>();
+                        }
                     }
 
                     virtual void onTransactionCommitted(const TransactionPtr& transaction);

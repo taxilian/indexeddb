@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -9,45 +10,48 @@
         <script language="JavaScript" type="text/javascript" src="common.js">
         </script>
         <script language="JavaScript" type="text/javascript">
+            function db() {
+                return document.getElementById("db");
+            }
             function testOpenDatabase() {
-                var database = db.indexedDB.open(makeRandomName(), "Database unit tests");
+                var database = db().indexedDB.open(makeRandomName(), "Database unit tests");
                 assertNotNull(database);
             }
 
             function testOpenReadOnlyDatabase() {
-                var database = db.indexedDB.open(makeRandomName(), "Database unit tests", false);
+                var database = db().indexedDB.open(makeRandomName(), "Database unit tests", false);
                 var thrown = true;
                 try {
                     database.createObjectStore(makeRandomName(), null);
                     thrown = false;
                 }
                 catch (e) {
-                    assertExceptionContains(e, "?????");
+                    assertExceptionContains(e, "CONSTRAINT_ERR");
                 }
 
                 assertTrue('The expected exception was not thrown.', thrown);
             }
 
             function testOpenWritableDatabase() {
-                var database = db.indexedDB.open(makeRandomName(), "Database unit tests", true);
+                var database = db().indexedDB.open(makeRandomName(), "Database unit tests", true);
                 database.createObjectStore(makeRandomName(), "bar");
             }
 
             function testDatabaseName() {
                 var name = makeRandomName();
-                var database = db.indexedDB.open(name, "Database unit tests");
+                var database = db().indexedDB.open(name, "Database unit tests");
                 assertEquals(name, database.name);
             }
 
             function testDatabaseDescription() {
                 var description = makeRandomName();
-                var database = db.indexedDB.open(makeRandomName(), description);
+                var database = db().indexedDB.open(makeRandomName(), description);
                 assertEquals(description, database.description);
             }
 
             function testDatabaseVersion() {
                 var name = makeRandomName();
-                var database = db.indexedDB.open(name, "Database unit tests");
+                var database = db().indexedDB.open(name, "Database unit tests");
 
                 database.setVersion('1.0');
                 assertEquals('1.0', database.version);
@@ -55,25 +59,25 @@
 
             function testDatabaseVersionPersistence() {
                 var name = makeRandomName();
-                var database = db.indexedDB.open(name, "Database unit tests");
+                var database = db().indexedDB.open(name, "Database unit tests");
                 database.setVersion('1.0');
 
-                var database2 = db.indexedDB.open(name, "Database unit tests");
+                var database2 = db().indexedDB.open(name, "Database unit tests");
                 assertEquals('1.0', database2.version);
             }
 
             function testDatabaseVersionIsInitiallyNull() {
                 var name = makeRandomName();
-                var database = db.indexedDB.open(name, "Database unit tests");
+                var database = db().indexedDB.open(name, "Database unit tests");
                 assertEquals(null, database.version);
             }
 
             function testDatabaseVersionPersistance() {
                 var name = makeRandomName();
-                var database = db.indexedDB.open(name, "Database unit tests");
+                var database = db().indexedDB.open(name, "Database unit tests");
                 database.setVersion('1.0');
 
-                var database2 = db.indexedDB.open(name, "Database unit tests");
+                var database2 = db().indexedDB.open(name, "Database unit tests");
                 assertEquals('1.0', database2.version);
             }
 
@@ -81,7 +85,7 @@
                 var databaseName = makeRandomName();
                 var objectStore1 = makeRandomName();
                 var objectStore2 = makeRandomName();
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 database.createObjectStore(objectStore1, objectStore1);
                 database.createObjectStore(objectStore2, objectStore2);
                 assertArrayEqualsIgnoringOrder([objectStore1, objectStore2], database.objectStores);
@@ -91,11 +95,11 @@
                 var databaseName = makeRandomName();
                 var objectStore1 = makeRandomName();
                 var objectStore2 = makeRandomName();
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 database.createObjectStore(objectStore1, objectStore1);
                 database.createObjectStore(objectStore2, objectStore2);
 
-                var database2 = db.indexedDB.open(databaseName, "Database unit tests");
+                var database2 = db().indexedDB.open(databaseName, "Database unit tests");
                 assertArrayEqualsIgnoringOrder(database2.objectStores, [objectStore1, objectStore2]);
             }
 
@@ -103,7 +107,7 @@
                 var databaseName = makeRandomName();
                 var objectStore1 = makeRandomName();
                 var objectStore2 = makeRandomName();
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 database.createObjectStore(objectStore1, objectStore1);
                 database.createObjectStore(objectStore2, objectStore2);
                 database.removeObjectStore(objectStore1);
@@ -114,12 +118,12 @@
                 var databaseName = makeRandomName();
                 var objectStore1 = makeRandomName();
                 var objectStore2 = makeRandomName();
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 database.createObjectStore(objectStore1, objectStore1);
                 database.createObjectStore(objectStore2, objectStore2);
                 database.removeObjectStore(objectStore1);
 
-                var database2 = db.indexedDB.open(databaseName, "Database unit tests");
+                var database2 = db().indexedDB.open(databaseName, "Database unit tests");
                 assertArrayEqualsIgnoringOrder(database2.objectStores, [objectStore2]);
             }
 
@@ -128,7 +132,7 @@
                 var objectStore1 = makeRandomName();
                 var indexName1 = makeRandomName();
 
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 var objectStore = database.createObjectStore(objectStore1, null, true);
                 objectStore.createIndex(indexName1, "");
 
@@ -145,7 +149,7 @@
                 var indexName3 = makeRandomName();
                 var indexName4 = makeRandomName();
 
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 var objectStore = database.createObjectStore(objectStore1Name, null, true);
                 var objectStore2 = database.createObjectStore(objectStore2Name, null, true);
                 objectStore.createIndex(indexName1, "");
@@ -169,7 +173,7 @@
                 var indexName2 = makeRandomName();
                 var indexName3 = makeRandomName();
 
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 var objectStore = database.createObjectStore(objectStoreName, null, true);
                 var objectStore2 = database.createObjectStore(objectStore2Name, null, true);
                 objectStore.createIndex(indexName1, "");
@@ -185,7 +189,7 @@
                 var objectStoreName = makeRandomName();
                 var thrown = true;
 
-                var database = db.indexedDB.open(databaseName, "Database unit tests");
+                var database = db().indexedDB.open(databaseName, "Database unit tests");
                 var objectStore = database.createObjectStore(objectStoreName, null, true);
 
                 try {
@@ -200,14 +204,14 @@
             }
 
             function testDatabaseTransaction() {
-                var database = db.indexedDB.open(makeRandomName(), "Database unit tests");
+                var database = db().indexedDB.open(makeRandomName(), "Database unit tests");
                 var transaction = database.transaction();
                 assertNotNull(transaction);
             }
 
             function testOrphanedDatabaseWithObjectStoreReference() {
                 var orphanObjectStore = function() {
-                    return db.indexedDB.open(makeRandomName(), "Database unit tests").createObjectStore(makeRandomName(), null, true);
+                    return db().indexedDB.open(makeRandomName(), "Database unit tests").createObjectStore(makeRandomName(), null, true);
                 }
 
                 // Object stores maintain a reference to their database, 

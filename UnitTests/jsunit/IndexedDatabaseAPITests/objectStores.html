@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -14,8 +15,11 @@
             var READ_ONLY = 1;
             var SNAPSHOT_READ = 2;
 
+            function db() {
+                return document.getElementById("db");
+            }
             function setUp() {
-                database = db.indexedDB.open(makeRandomName(), "Object store unit tests");
+                database = db().indexedDB.open(makeRandomName(), "Object store unit tests");
             }
 
             function tearDown() {
@@ -37,7 +41,7 @@
             function testCreateObjectStoreWithoutKeyPath() {
                 var objectStore = database.createObjectStore(makeRandomName(), null);
                 assertNotNull(objectStore);
-                assertNull(objectStore.keyPath);
+                assertUndefined(objectStore.keyPath);
             }
 
             function testCreateObjectStoreWithAutoIncrement() {

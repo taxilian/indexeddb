@@ -67,9 +67,10 @@ namespace IndexedDB {
 			FB::variant getVersionVariant() 
 				{ 
 				boost::optional<std::string> version = getVersion();
-				return version.is_initialized()
-					? *version
-					: FB::variant();
+                if (version)
+                    return *version;
+                else
+                    return FB::FBNull();
 				}
 		};
 	}

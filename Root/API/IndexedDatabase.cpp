@@ -21,7 +21,7 @@ IndexedDatabase::IndexedDatabase(FB::BrowserHostPtr host)
 	: host(host)
 	{ registerMethod("open", make_method(this, &IndexedDatabase::open)); }
 
-FB::JSAPIPtr IndexedDatabase::open(const string& name, const string& description, const FB::CatchAll& args)
+DatabasePtr IndexedDatabase::open(const string& name, const string& description, const FB::CatchAll& args)
 	{
 	const FB::VariantList& values = args.value;
 	if(values.size() > 1)

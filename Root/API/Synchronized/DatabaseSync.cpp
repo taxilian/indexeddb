@@ -40,6 +40,7 @@ DatabaseSync::DatabaseSync(FB::BrowserHostPtr host, const string& name, const st
 	: Database(name, description),
 	  host(host), 
 	  modifyDatabase(modifyDatabase),
+      openObjectStores(boost::make_shared<Support::Container<ObjectStoreSync> >()),
 	  implementation(Implementation::AbstractDatabaseFactory::getInstance()
 		.createDatabase(getOrigin(), name, description, modifyDatabase)),
 	  metadata(implementation->getMetadata(), Metadata::Database, name),
@@ -48,11 +49,11 @@ DatabaseSync::DatabaseSync(FB::BrowserHostPtr host, const string& name, const st
 		transactionFactory(*implementation)
 	  #pragma warning(pop)
 	{
-	registerMethod("createObjectStore", make_method(this, static_cast<FB::JSAPIPtr (DatabaseSync::*)(const string&, const FB::CatchAll &)>(&DatabaseSync::createObjectStore))); 
+	registerMethod("createObjectStore", make_method(this, &DatabaseSync::createObjectStore)); 
 	registerMethod("openObjectStore", make_method(this, static_cast<FB::JSAPIPtr (DatabaseSync::*)(const string&, const FB::CatchAll &)>(&DatabaseSync::openObjectStore))); 
 	registerMethod("removeObjectStore", FB::make_method(this, &DatabaseSync::removeObjectStore));
 	registerMethod("setVersion", FB::make_method(this, &DatabaseSync::setVersion));
-	registerMethod("transaction", FB::make_method(this, static_cast<FB::JSAPIPtr (DatabaseSync::*)(const FB::CatchAll &)>(&DatabaseSync::transaction))); 
+	registerMethod("transaction", FB::make_method(this, static_cast<TransactionSyncPtr (DatabaseSync::*)(const FB::variant&, const boost::optional<unsigned int>)>(&DatabaseSync::transaction))); 
 	}
 
 DatabaseSync::~DatabaseSync()
@@ -60,28 +61,7 @@ DatabaseSync::~DatabaseSync()
 	if(currentTransaction)
 		currentTransaction->close();
 
-	openObjectStores.release();
-	}
-
-//TODO: can KeyPath be null?  Add unit test; I think this is broken
-FB::JSAPIPtr DatabaseSync::createObjectStore(const string& name, const FB::CatchAll& args)
-	{
-	const FB::VariantList& values = args.value;
-
-	if(values.size() < 1 || values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<bool>())
-		throw FB::invalid_arguments();
-	// If keyPath specified, it must be a string of length > 0
-	else if(!values[0].empty() && (!values[0].is_of_type<string>() || values[0].cast<string>().length() == 0))
-		throw FB::invalid_arguments();
-	
-	FB::variant keyPath = values[0];
-	bool autoIncrement = values.size() == 2 ? values[1].cast<bool>() : true;
-
-	return keyPath.empty() 
-		? static_cast<FB::JSAPIPtr>(createObjectStore(name, autoIncrement))
-		: static_cast<FB::JSAPIPtr>(createObjectStore(name, keyPath.cast<string>(), autoIncrement));
+	openObjectStores->release();
 	}
 
 FB::JSAPIPtr DatabaseSync::openObjectStore(const string& name, const FB::CatchAll& args)
@@ -115,53 +95,52 @@ optional<string> DatabaseSync::getVersion() const
 void DatabaseSync::setVersion(const string& version)
 	{ metadata.putMetadata("version", Data(version), transactionFactory.getTransactionContext()); }
 
-boost::shared_ptr<ObjectStoreSync> DatabaseSync::createObjectStore(const string& name, const string& keyPath, bool autoIncrement)
+ObjectStoreSyncPtr DatabaseSync::createObjectStore(const string& name, const boost::optional<string>& keyPath, boost::optional<bool> autoIncrement)
 	{ 
 	ensureCanCreateObjectStore(name);
+    bool ai = autoIncrement ? *autoIncrement : false;
+    try
+        {
+        if (keyPath) 
+            {
+        	metadata.addToMetadataCollection("objectStores", name, transactionFactory, transactionFactory.getTransactionContext());
+        	ObjectStoreSyncPtr objectStore(
+                new ObjectStoreSync(
+                    host,
+                    FB::ptr_cast<DatabaseSync>(shared_from_this()),
+                    transactionFactory,
+                    transactionFactory.getTransactionContext(),
+                    metadata,
+                    name,
+                    *keyPath,
+                    ai));
+        	openObjectStores->add(objectStore);
+            return objectStore;
+            }
+        else
+            {
+    		auto_ptr<Implementation::Transaction> transaction = transactionFactory.createTransaction();
+    		
+    		metadata.addToMetadataCollection("objectStores", name, transactionFactory, *transaction);
+    		boost::shared_ptr<ObjectStoreSync> objectStore(
+                new ObjectStoreSync(
+                    host,
+                    FB::ptr_cast<DatabaseSync>(shared_from_this()),
+                    transactionFactory,
+                    *transaction,
+                    metadata,
+                    name,
+                    ai
+                ));
+    		openObjectStores->add(objectStore);
 
-	metadata.addToMetadataCollection("objectStores", name, transactionFactory, transactionFactory.getTransactionContext());
-	boost::shared_ptr<ObjectStoreSync> objectStore(
-        new ObjectStoreSync(
-            host,
-            FB::ptr_cast<DatabaseSync>(shared_from_this()),
-            transactionFactory,
-            transactionFactory.getTransactionContext(),
-            metadata,
-            name,
-            keyPath,
-            autoIncrement));
-	openObjectStores.add(objectStore);
+    		transaction->commit();
 
-	return objectStore;
-	}
-
-boost::shared_ptr<ObjectStoreSync> DatabaseSync::createObjectStore(const string& name, bool autoIncrement)
-	{ 
-	ensureCanCreateObjectStore(name);
-
-	try
-		{
-		auto_ptr<Implementation::Transaction> transaction = transactionFactory.createTransaction();
-		
-		metadata.addToMetadataCollection("objectStores", name, transactionFactory, *transaction);
-		boost::shared_ptr<ObjectStoreSync> objectStore(
-            new ObjectStoreSync(
-                host,
-                FB::ptr_cast<DatabaseSync>(shared_from_this()),
-                transactionFactory,
-                *transaction,
-                metadata,
-                name,
-                autoIncrement
-            ));
-		openObjectStores.add(objectStore);
-
-		transaction->commit();
-
-		return objectStore;
-		}
-	catch(Implementation::ImplementationException& e)
-		{ throw DatabaseException(e); }
+    		return objectStore;
+            }
+        }
+    	catch(Implementation::ImplementationException& e)
+    		{ throw DatabaseException(e); }
 	}
 
 void DatabaseSync::ensureCanCreateObjectStore(const string& name)
@@ -192,7 +171,7 @@ boost::shared_ptr<ObjectStoreSync> DatabaseSync::openObjectStore(const string& n
                 metadata,
                 name,
                 mode));
-		openObjectStores.add(objectStore);
+		openObjectStores->add(objectStore);
 		return objectStore;
 		}
 	catch(Implementation::ImplementationException& e)
@@ -208,7 +187,7 @@ long DatabaseSync::removeObjectStore(const string& storeName)
 	
 	//auto_ptr<Implementation::Transaction> transaction = transactionFactory.createTransaction();
 
-	openObjectStores.remove(storeName);
+	openObjectStores->remove(storeName);
 	metadata.removeFromMetadataCollection("objectStores", storeName, transactionFactory, transactionFactory.getTransactionContext());
 	implementation->removeObjectStore(storeName, transactionFactory.getTransactionContext());
 
@@ -234,33 +213,22 @@ StringVector DatabaseSync::getIndexNames()
 	return indexes;
 	}
 
-boost::shared_ptr<TransactionSync> DatabaseSync::transaction(const string& objectStoreName, const optional<unsigned int>& timeout)
+TransactionSyncPtr DatabaseSync::transaction(const string& objectStoreName, const optional<unsigned int>& timeout)
 	{ return transaction(StringVector(1, objectStoreName), timeout); }
 
-FB::JSAPIPtr DatabaseSync::transaction(const FB::CatchAll& args)
+TransactionSyncPtr DatabaseSync::transaction(const FB::variant& objStoreName, const boost::optional<unsigned int> timeout)
 	{
-	const FB::VariantList& values = args.value;
-
-	if(values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<int>())
-		throw FB::invalid_arguments();
-
-	optional<unsigned int> timeout = values.size() == 2 
-		? values[1].cast<int>() 
-		: optional<unsigned int>();
-
 	// We allow a single string, an array, or nothing as possible object store names
 	// (Believe spec disallows a single string, but that's silly)
-	if(values.size() == 0)
+	if(objStoreName.empty())
 		transaction(StringVector(), timeout);
-	else if(values[0].can_be_type<FB::JSObjectPtr>())
+	else if(objStoreName.can_be_type<FB::JSObjectPtr>())
 		try
-			{ transaction(values[0].convert_cast<StringVector>(), timeout); }
+			{ transaction(objStoreName.convert_cast<StringVector>(), timeout); }
 		catch(FB::bad_variant_cast)
 			{ throw FB::invalid_arguments(); }
-	else if(values[0].can_be_type<string>())
-		transaction(values[0].convert_cast<string>(), timeout);
+	else if(objStoreName.can_be_type<string>())
+		transaction(objStoreName.convert_cast<string>(), timeout);
 	else
 		throw FB::invalid_arguments();
 	
@@ -298,7 +266,7 @@ boost::shared_ptr<TransactionSync> DatabaseSync::transaction(const StringVector&
             new TransactionSync(FB::ptr_cast<DatabaseSync>(shared_from_this()), transactionFactory, ObjectStoreSyncList(), timeout)
             );
 
-	if(getCurrentTransaction())
+	if(!getCurrentTransaction())
 		throw DatabaseException("UNKNOWN_ERR", DatabaseException::UNKNOWN_ERR );
 	else
 		return FB::ptr_cast<TransactionSync>(getCurrentTransaction());
@@ -311,13 +279,13 @@ TransactionPtr DatabaseSync::getCurrentTransaction() const
 
 void DatabaseSync::onTransactionCommitted(const TransactionPtr& transaction)
 	{ 
-	openObjectStores.raiseTransactionCommitted(transaction);
+	openObjectStores->raiseTransactionCommitted(transaction);
 	this->currentTransaction.reset(); 
 	}
 
 void DatabaseSync::onTransactionAborted(const TransactionPtr& transaction)
 	{ 
-	openObjectStores.raiseTransactionAborted(transaction);
+	openObjectStores->raiseTransactionAborted(transaction);
 	this->currentTransaction.reset(); 
 	}
 

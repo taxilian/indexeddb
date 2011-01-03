@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -13,8 +14,11 @@
             var objectStore;
             var READ_WRITE = 0;
 
+            function db() {
+                return document.getElementById("db");
+            }
             function setUp() {
-                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                connection = db().indexedDB.open(makeRandomName(), "Index unit tests");
                 objectStore = connection.createObjectStore(makeRandomName(), null, true);
             }
 

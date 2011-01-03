@@ -24,10 +24,11 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
-class CursorSync;
-class DatabaseSync;
-typedef boost::shared_ptr<DatabaseSync> DatabaseSyncPtr;
-class KeyRange;
+FB_FORWARD_PTR(DatabaseSync);
+FB_FORWARD_PTR(ObjectStoreSync);
+FB_FORWARD_PTR(KeyRange);
+FB_FORWARD_PTR(CursorSync);
+FB_FORWARD_PTR(IndexSync);
 
 ///<summary>
 /// This class represents a synchronized object store per the Indexed Database API draft
@@ -53,36 +54,35 @@ class ObjectStoreSync : public ObjectStore
 		// Get the value from the object store identified by the given key
 		FB::variant get(FB::variant key);
 		// Put a new key/value pair into the object store
-		FB::variant put(FB::variant value, const FB::CatchAll& args);
+        FB::variant put(const FB::variant& value, const FB::variant& inKey, const boost::optional<bool> no_overwrite);
 		// Remove the key/value pair from the object store as identified by the given key
 		void remove(FB::variant key);
 
 		// Open a new cursor over this object store, bounded by the given range
-		boost::shared_ptr<CursorSync> openCursor(const KeyRangePtr& range, const Cursor::Direction direction);
+		boost::shared_ptr<CursorSync> openCursorDirect(const KeyRangePtr& range, const Cursor::Direction direction);
 
 		// Create a new index over this object store
-		boost::shared_ptr<IndexSync> createIndex(const std::string name, const boost::optional<std::string> keyPath, const bool unique); //raises (DatabaseException);
+        IndexSyncPtr createIndex(const std::string name, const boost::optional<std::string> keyPath, const boost::optional<bool> in_unique);
 		// Remove an existing index from the object store
 		void removeIndex(const std::string& indexName);
-		void removeIndex(const Index& index) { removeIndex(index.getName()); }
+		void removeIndex(const Index& index);
 
 		// Many objects in the synchronized family need access to an object store's implementation; we expose it broadly
 		// instead of friending ~5 classes/methods.
-		Implementation::ObjectStore& getImplementation() const { return *implementation; }
+		Implementation::ObjectStore& getImplementation() const;
 
 		// Get the names of the indexes associated with this object store
 		virtual StringVector getIndexNames() const;
 		// Get this object's key path (if any; undefined otherwise)
-		virtual FB::variant getKeyPath() const { 
-			return keyPath.is_initialized() ? keyPath.get() : FB::variant(); }
+		virtual FB::variant getKeyPath() const;
 
 	protected:
 		long nextKey;
 		bool autoIncrement;
 		boost::optional<std::string> keyPath;
 		// We maintain a set of indexes and cursors that have been opened under this object store
-		Support::Container<IndexSync> openIndexes;
-		Support::Container<CursorSync> openCursors;
+		boost::shared_ptr<Support::Container<IndexSync> > openIndexes;
+		boost::shared_ptr<Support::Container<CursorSync> > openCursors;
 
 		// Some of our operations are not thread-safe, so we synchronize
 		boost::mutex synchronization;
@@ -110,9 +110,8 @@ class ObjectStoreSync : public ObjectStore
 		TransactionFactory transactionFactory;
 
 		// Internal operations to expose our functionality as weakly-typed methods to user agents
-		FB::JSAPIPtr openCursor(const FB::CatchAll& args);
-		FB::JSAPIPtr openIndex(const std::string& name);
-		FB::JSAPIPtr createIndex(const std::string name, const FB::CatchAll& args);
+        CursorSyncPtr openCursor(const boost::optional<FB::VariantMap> info, const boost::optional<int> dir);
+		IndexSyncPtr openIndex(const std::string& name);
 
 		void initializeMethods();
 

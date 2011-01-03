@@ -21,14 +21,14 @@ using Implementation::Data;
 
 namespace API { 
 
-Data Convert::toData(FB::BrowserHostPtr host, const FB::variant& variant)
+Data Convert::toData(const FB::BrowserHostPtr& host, const FB::variant& variant)
 	{ return convert<Data>(host, variant); }
 
-Key Convert::toKey(FB::BrowserHostPtr host, const FB::variant& variant)
+Key Convert::toKey(const FB::BrowserHostPtr& host, const FB::variant& variant)
 	{ return convert<Key>(host, variant); }
 
 template<class T>
-T Convert::convert(FB::BrowserHostPtr host, const FB::variant& variant)
+T Convert::convert(const FB::BrowserHostPtr& host, const FB::variant& variant)
 	{
 	switch(getType(variant))
 		{
@@ -54,7 +54,7 @@ T Convert::convert(FB::BrowserHostPtr host, const FB::variant& variant)
 		}
 	}
 
-FB::variant Convert::toVariant(FB::BrowserHostPtr host, const Data& data)
+FB::variant Convert::toVariant(const FB::BrowserHostPtr& host, const Data& data)
 	{
 	switch(data.getType())
 		{
@@ -69,7 +69,7 @@ FB::variant Convert::toVariant(FB::BrowserHostPtr host, const Data& data)
 		case Data::Object:
 			return parse(host, string(static_cast<const char*>(data.getRawValue())));
 		case Data::Null:
-			return FB::variant();
+			return FB::FBNull();
 		case Data::Undefined:
 			return FB::variant();
 		default:
@@ -77,16 +77,14 @@ FB::variant Convert::toVariant(FB::BrowserHostPtr host, const Data& data)
 		}
 	}
 
-Data::ECMAType Convert::getType(FB::variant variant)
+Data::ECMAType Convert::getType(const FB::variant& variant)
 	{
-    if (variant.can_be_type<int>())
-        return Data::Integer;
-	else if(variant.is_of_type<wstring>())
+	if(variant.is_of_type<wstring>())
 		return Data::String;
 	else if(variant.is_of_type<string>())
 		return Data::String;
-	else if(variant.is_of_type<int>())
-		return Data::Integer;
+    else if (variant.can_be_type<int>())
+        return Data::Integer;
 	else if(variant.is_of_type<double>())
 		return Data::Number;
 	else if(variant.is_of_type<FB::JSObjectPtr>())
@@ -97,7 +95,7 @@ Data::ECMAType Convert::getType(FB::variant variant)
 		throw DatabaseException("An unexpected variant type was encountered.", DatabaseException::UNKNOWN_ERR);
 	}
 
-std::string Convert::stringify(FB::BrowserHostPtr host, const FB::JSObjectPtr& object)
+std::string Convert::stringify(const FB::BrowserHostPtr& host, const FB::JSObjectPtr& object)
 	{
 	if(host == NULL)
 		throw DatabaseException("Browser host was null.", DatabaseException::NOT_FOUND_ERR);
@@ -122,7 +120,7 @@ std::string Convert::stringify(FB::BrowserHostPtr host, const FB::JSObjectPtr& o
 		throw DatabaseException("window.JSON missing method stringify().", DatabaseException::NOT_FOUND_ERR);
 	}
 
-FB::JSObjectPtr Convert::parse(FB::BrowserHostPtr host, const std::string& string)
+FB::variant Convert::parse(const FB::BrowserHostPtr& host, const std::string& string)
 	{
 	if(host == NULL)
 		throw DatabaseException("Browser host was null.", DatabaseException::NOT_FOUND_ERR);
@@ -141,7 +139,7 @@ FB::JSObjectPtr Convert::parse(FB::BrowserHostPtr host, const std::string& strin
 		if(result.empty())
 			throw DatabaseException("JSON parsing failed.", DatabaseException::RECOVERABLE_ERR);
 		else
-			return result.cast<FB::JSObjectPtr>();
+			return result;
 		}
 	else
 		throw DatabaseException("window.JSON missing method parse().", DatabaseException::NOT_FOUND_ERR);

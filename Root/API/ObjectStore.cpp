@@ -18,6 +18,17 @@ ObjectStore::ObjectStore(const std::string& name, const Implementation::ObjectSt
 	registerProperty("mode", make_property(this, &ObjectStore::getModeInteger));
 	registerProperty("indexNames", make_property(this, &ObjectStore::getIndexNameVariants));
 	}
+
+std::string ObjectStore::getName() const
+{
+    return name;
+}
+
+Implementation::ObjectStore::Mode ObjectStore::getMode() const
+{
+    return mode;
+}
+
 }
 }
 }

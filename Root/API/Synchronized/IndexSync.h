@@ -59,7 +59,7 @@ public:
 	virtual void onTransactionCommitted(const TransactionPtr& transaction);
 protected:
 	// We maintain a set of opened cursors; these must be forcably closed prior to closing the index
-	Support::Container<CursorSync> openCursors;
+	boost::shared_ptr<Support::Container<CursorSync> > openCursors;
 
 private:
 	FB::BrowserHostPtr host;
@@ -73,9 +73,8 @@ private:
 	TransactionFactory transactionFactory;
 
 	// Methods to interact between the user agent and this class; it interprets the args and calls the strongly typed overloads
-	FB::JSAPIPtr openCursor(const FB::CatchAll& args);
-	FB::JSAPIPtr openObjectCursor(const FB::CatchAll& args);
-
+    CursorSyncPtr openCursor(const boost::optional<FB::VariantMap>& info, const boost::optional<int>& dir);
+    CursorSyncPtr openObjectCursor(const boost::optional<FB::VariantMap>& info, const boost::optional<int>& dir);
 	void initializeMethods();
 
 	// When an index is created or opened, we need to initialize our metadata; these methods do so

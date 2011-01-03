@@ -25,7 +25,7 @@ public:
 	EnvironmentSync(const FB::BrowserHostPtr& host);
 
 	// Per spec, returns a reference to the IndexedDB API handle
-	FB::JSAPIPtr getIndexedDB();
+	IndexedDatabasePtr getIndexedDB();
 
 private:
 	IndexedDatabasePtr indexedDB;

@@ -26,7 +26,7 @@ namespace BrandonHaynes {
             namespace Support {
 
                 template<class T>
-                class Container : LifeCycleObserver<T>
+                class Container : public LifeCycleObserver<T>
                 {
                 public:
                     typedef boost::shared_ptr<LifeCycleObserver<T> > LifeCycleObserverPtr;

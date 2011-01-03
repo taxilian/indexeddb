@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -17,13 +18,16 @@
             var objectStoreName = makeRandomName();
             var primaryKey = 'a' + makeRandomName();
             var secondaryKey = 'a' + makeRandomName();
+            function db() {
+                return document.getElementById("db");
+            }
             var value = {
                 primary: primaryKey,
                 secondary: secondaryKey
             };
 
             function setUp() {
-                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                connection = db().indexedDB.open(makeRandomName(), "Index unit tests");
                 objectStore = connection.createObjectStore(objectStoreName, null, true);
                 index = objectStore.createIndex(makeRandomName(), "secondary", true);
 

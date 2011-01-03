@@ -14,6 +14,8 @@ namespace BrandonHaynes {
 namespace IndexedDB { 
 namespace API { 
 
+FB_FORWARD_PTR(Database);
+
 ///<summary>
 /// This class represents the IndexedDB interface in the Indexed Database API.  Because our 
 /// namespace is also called "IndexedDB", we use an alternate name here.
@@ -23,7 +25,7 @@ class IndexedDatabase : public FB::JSAPIAuto
 public:
 	IndexedDatabase(FB::BrowserHostPtr host);
 
-	FB::JSAPIPtr open(const std::string& name, const std::string& description, const FB::CatchAll& args);
+	DatabasePtr open(const std::string& name, const std::string& description, const FB::CatchAll& args);
 
 protected:
 	FB::BrowserHostPtr host;

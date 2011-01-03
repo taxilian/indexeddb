@@ -43,6 +43,8 @@ void ObjectStoreSync::removeLifeCycleObserver( const LifeCycleObserverPtr& obser
 
 ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const string& keyPath, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
+        openIndexes(boost::make_shared<Support::Container<IndexSync> >()),
+        openCursors(boost::make_shared<Support::Container<CursorSync> >()),
 		host(host), 
 	    transactionFactory(transactionFactory),
 		metadata(metadata, Metadata::ObjectStore, name),
@@ -55,6 +57,8 @@ ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseS
 
 ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const bool autoIncrement)
 	:	ObjectStore(name, Implementation::ObjectStore::READ_WRITE),
+        openIndexes(boost::make_shared<Support::Container<IndexSync> >()),
+        openCursors(boost::make_shared<Support::Container<CursorSync> >()),
 		host(host), 
 	    transactionFactory(transactionFactory),
 		metadata(metadata, Metadata::ObjectStore, name),
@@ -68,6 +72,8 @@ ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseS
 
 ObjectStoreSync::ObjectStoreSync(const FB::BrowserHostPtr& host, const DatabaseSyncPtr& database, TransactionFactory& transactionFactory, TransactionContext& transactionContext, Metadata& metadata, const string& name, const Implementation::ObjectStore::Mode mode)
 	:	ObjectStore(name, mode),
+        openIndexes(boost::make_shared<Support::Container<IndexSync> >()),
+        openCursors(boost::make_shared<Support::Container<CursorSync> >()),
 		transactionFactory(transactionFactory),
 		host(host), 
 		metadata(metadata, Metadata::ObjectStore, name),
@@ -90,10 +96,10 @@ void ObjectStoreSync::initializeMethods()
     _observable = boost::make_shared<Support::_privateObservable<ObjectStoreSync> >(this);
 	registerMethod("get", make_method(this, &ObjectStoreSync::get));
 	registerMethod("put", make_method(this, &ObjectStoreSync::put));
-	registerMethod("remove", make_method(this, &ObjectStoreSync::remove));
-	registerMethod("openCursor", make_method(this, static_cast<FB::JSAPIPtr (ObjectStoreSync::*)(const FB::CatchAll &)>(&ObjectStoreSync::openCursor))); 
+    registerMethod("remove", make_method(this, &ObjectStoreSync::remove));
+    registerMethod("openCursor", make_method(this, &ObjectStoreSync::openCursor)); 
 
-	registerMethod("createIndex", FB::make_method(this, static_cast<FB::JSAPIPtr (ObjectStoreSync::*)(const string, const FB::CatchAll &)>(&ObjectStoreSync::createIndex)));
+	registerMethod("createIndex", FB::make_method(this, &ObjectStoreSync::createIndex));
 	registerMethod("openIndex", FB::make_method(this, &ObjectStoreSync::openIndex));
 	registerMethod("removeIndex", FB::make_method(this, static_cast<void (ObjectStoreSync::*)(const string&)>(&ObjectStoreSync::removeIndex)));
 	}
@@ -113,24 +119,15 @@ FB::variant ObjectStoreSync::get(FB::variant key)
 		{ throw DatabaseException(e); }
 	}
 
-FB::variant ObjectStoreSync::put(FB::variant value, const FB::CatchAll& args) 
+FB::variant ObjectStoreSync::put(const FB::variant& value, const FB::variant& inKey, const boost::optional<bool> no_overwrite) 
 	{ 
-	const FB::VariantList& values = args.value;
-
-	if(values.size() > 2)
-		throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<bool>())
-		throw FB::invalid_arguments();
-	else if(this->getMode() != Implementation::ObjectStore::READ_WRITE)
+	if(this->getMode() != Implementation::ObjectStore::READ_WRITE)
 		throw DatabaseException("NOT_ALLOWED_ERR", DatabaseException::NOT_ALLOWED_ERR);
-	else if(values.size() >= 1 && !values[0].empty() && keyPath.is_initialized())
+	else if(!inKey.empty() && keyPath.is_initialized())
 		throw DatabaseException("DATA_ERR", DatabaseException::DATA_ERR);
 
-	FB::variant key = values.size() >= 1 && !values[0].empty() ? values[0] : generateKey(value);
-	bool noOverwrite = values.size() == 2 ? values[1].cast<bool>() : false;
-
-	if(key.empty())
-		throw DatabaseException("DATA_ERR", DatabaseException::DATA_ERR);
+	FB::variant key = !inKey.empty() ? inKey : generateKey(value);
+	bool noOverwrite = no_overwrite ? *no_overwrite : false;
 
 	try
 		{ implementation->put(Convert::toKey(host, key), Convert::toData(host, value), noOverwrite, transactionFactory.getTransactionContext()); }
@@ -153,55 +150,36 @@ void ObjectStoreSync::close()
 	lock_guard<mutex> guard(synchronization);
 
 	_observable->raiseOnCloseEvent();
-	openCursors.release();
-	openIndexes.release();
+	openCursors->release();
+	openIndexes->release();
 	this->implementation->close(); 
 	}
 
-
-FB::JSAPIPtr ObjectStoreSync::openCursor(const FB::CatchAll& args)
+CursorSyncPtr ObjectStoreSync::openCursor(const boost::optional<FB::VariantMap> info, const boost::optional<int> dir)
 	{
-	const FB::VariantList& values = args.value;
-
-    if (!values.size() || values[0].empty())
-        return openCursor(KeyRangePtr(), Cursor::NEXT);
-
-	if(values.size() > 2 || !values.size())
-		throw FB::invalid_arguments();
-
-    int flags = 0;
-    try {
-        FB::VariantMap info = values[0].convert_cast<FB::VariantMap>();
-        if (info.find("right") == info.end() |
-            info.find("left") == info.end() |
-            info.find("flags") == info.end()) {
+    KeyRangePtr range;
+    if (info) {
+        if (info->find("right") == info->end() |
+            info->find("left") == info->end() |
+            info->find("flags") == info->end()) {
             throw FB::invalid_arguments();
         }
-        if (values.size() > 1 && values[1].can_be_type<int>()) {
-            flags = values[1].convert_cast<int>();
-        } else if(values.size() == 2) {
-            flags = info["flags"].convert_cast<int>();
-        }
+        int flags(info->at("flags").convert_cast<int>());
+        range = boost::make_shared<KeyRange>(info->at("left"), info->at("right"), flags);
+    }
 
-        KeyRangePtr range(boost::make_shared<KeyRange>(info["left"], info["right"], flags));
-    	const Cursor::Direction direction = values.size() == 2 ? static_cast<Cursor::Direction>(flags) : Cursor::NEXT;
-
-    	return openCursor(range, direction);
-        }
-    catch (const FB::bad_variant_cast&)
-        {
-        throw FB::invalid_arguments();
-        }
+	const Cursor::Direction direction = dir ? static_cast<Cursor::Direction>(*dir) : Cursor::NEXT;
+	return openCursorDirect(range, direction);
 	}
 
-boost::shared_ptr<CursorSync> ObjectStoreSync::openCursor(const KeyRangePtr& range, const Cursor::Direction direction)
+CursorSyncPtr ObjectStoreSync::openCursorDirect(const KeyRangePtr& range, const Cursor::Direction direction)
 	{
 	try
 		{ 
 		CursorSyncPtr cursor(
             new CursorSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, range, direction)
             );
-		openCursors.add(cursor);
+		openCursors->add(cursor);
 		return cursor;
 		}
 	catch(ImplementationException& e)
@@ -209,43 +187,30 @@ boost::shared_ptr<CursorSync> ObjectStoreSync::openCursor(const KeyRangePtr& ran
 	}
 
 
-FB::JSAPIPtr ObjectStoreSync::createIndex(const string name, const FB::CatchAll& args)
+IndexSyncPtr ObjectStoreSync::createIndex(const string name, const boost::optional<string> keyPath, const boost::optional<bool> in_unique)
 	{
-	const FB::VariantList& values = args.value;
-
-	if(values.size() > 2)
+	if(name.empty())
 		throw FB::invalid_arguments();
-	else if(values.size() >= 1 && !(values[0].is_of_type<string>() || values[0].empty()))
-		throw FB::invalid_arguments();
-	else if(values.size() == 2 && !values[1].is_of_type<bool>())
-		throw FB::invalid_arguments();
+	bool unique = in_unique ? *in_unique : false;
 
-	optional<string> keyPath = values.size() >= 1 && !values[0].empty() ? values[0].cast<string>() : optional<string>();
-	bool unique = values.size() == 2 ? values[1].cast<bool>() : false;
-
-	return static_cast<FB::JSAPIPtr>(createIndex(name, keyPath, unique));
-	}
-
-boost::shared_ptr<IndexSync> ObjectStoreSync::createIndex(const string name, const optional<string> keyPath, bool unique)
-	{
 	metadata.addToMetadataCollection("indexes", name, transactionFactory, transactionFactory.getTransactionContext());
 
 	IndexSyncPtr index(
         new IndexSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, metadata, name, keyPath, unique)
         );
-	openIndexes.add(index);
+	openIndexes->add(index);
 	return index;
 	}
 
-FB::JSAPIPtr ObjectStoreSync::openIndex(const string& name)
+IndexSyncPtr ObjectStoreSync::openIndex(const string& name)
 	{
 	try
 		{
 		IndexSyncPtr index(
             new IndexSync(host, FB::ptr_cast<ObjectStoreSync>(shared_from_this()), transactionFactory, metadata, name)
             );
-		openIndexes.add(index);
-		return static_cast<FB::JSAPIPtr>(index);
+		openIndexes->add(index);
+		return index;
 		}
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
@@ -257,7 +222,7 @@ void ObjectStoreSync::removeIndex(const string& indexName)
 		{ 
 		auto_ptr<Implementation::Transaction> transaction = transactionFactory.createTransaction();
 
-		openIndexes.remove(indexName);
+		openIndexes->remove(indexName);
 		metadata.removeFromMetadataCollection("indexes", indexName, transactionFactory, *transaction);
 		getImplementation().removeIndex(indexName, *transaction); 
 
@@ -266,6 +231,11 @@ void ObjectStoreSync::removeIndex(const string& indexName)
 	catch(ImplementationException& e)
 		{ throw DatabaseException(e); }
 	}
+
+void ObjectStoreSync::removeIndex( const Index& index )
+{
+    removeIndex(index.getName());
+}
 
 FB::variant ObjectStoreSync::generateKey(FB::variant value)
 	{ 
@@ -319,17 +289,27 @@ StringVector ObjectStoreSync::getIndexNames() const
 
 void ObjectStoreSync::onTransactionCommitted(const TransactionPtr& transaction)
 	{ 
-	openCursors.raiseTransactionCommitted(transaction); 
-	openIndexes.raiseTransactionCommitted(transaction); 
-	openCursors.release();
+	openCursors->raiseTransactionCommitted(transaction); 
+	openIndexes->raiseTransactionCommitted(transaction); 
+	openCursors->release();
 	}
 
 void ObjectStoreSync::onTransactionAborted(const TransactionPtr& transaction)
 	{ 
-	openCursors.raiseTransactionAborted(transaction); 
-	openIndexes.raiseTransactionAborted(transaction); 
-	openCursors.release();
+	openCursors->raiseTransactionAborted(transaction); 
+	openIndexes->raiseTransactionAborted(transaction); 
+	openCursors->release();
 	}
+
+Implementation::ObjectStore& ObjectStoreSync::getImplementation() const
+{
+    return *implementation;
+}
+
+FB::variant ObjectStoreSync::getKeyPath() const
+{
+    return keyPath.is_initialized() ? keyPath.get() : FB::variant();
+}
 
 }
 }

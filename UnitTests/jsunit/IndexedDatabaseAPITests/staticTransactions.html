@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -9,8 +10,11 @@
         <script language="JavaScript" type="text/javascript" src="common.js">
         </script>
         <script language="JavaScript" type="text/javascript">
+            function db() {
+                return document.getElementById("db");
+            }
             function setUp() {
-                database = db.indexedDB.open(makeRandomName(), "Transaction unit tests");
+                database = db().indexedDB.open(makeRandomName(), "Transaction unit tests");
             }
 
             function tearDown() {

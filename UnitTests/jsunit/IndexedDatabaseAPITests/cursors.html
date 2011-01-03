@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -23,8 +24,11 @@
                 secondary: secondaryKey
             };
 
+            function db() {
+                return document.getElementById("db");
+            }
             function setUp() {
-                connection = db.indexedDB.open(makeRandomName(), "Index unit tests");
+                connection = db().indexedDB.open(makeRandomName(), "Index unit tests");
                 objectStore = connection.createObjectStore(objectStoreName, null, true);
                 manualIndex = objectStore.createIndex(makeRandomName(), undefined, true);
                 index = objectStore.createIndex(makeRandomName(), "secondary", true);
@@ -115,8 +119,8 @@
 
                 cursor.remove();
 
-                assertNull(cursor.key);
-                assertNull(cursor.value);
+                assertUndefined(cursor.key);
+                assertUndefined(cursor.value);
             }
 
             function testRemovedIndexCursorValue() {
@@ -124,8 +128,8 @@
 
                 cursor.remove();
 
-                assertNull(cursor.key);
-                assertNull(cursor.value);
+                assertUndefined(cursor.key);
+                assertUndefined(cursor.value);
             }
 
             function testRemovedManualIndexCursorValue() {
@@ -133,8 +137,8 @@
 
                 cursor.remove();
 
-                assertNull(cursor.key);
-                assertNull(cursor.value);
+                assertUndefined(cursor.key);
+                assertUndefined(cursor.value);
             }
 
             function testReadOnlyObjectStoreRemoval() {

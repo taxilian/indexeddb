@@ -1,3 +1,4 @@
+<!-- saved from url=(0013)about:internet -->
 <html>    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -20,11 +21,14 @@
                 return i;
             };
 
+            function db() {
+                return document.getElementById("db");
+            }
             /* ABCDEFGHIJKLMNOPQRSTUVWXYZ 
             01234567890123456789012345*/
 
             function setUp() {
-                connection = db.indexedDB.open(makeRandomName(), "Indexed cursor range unit tests");
+                connection = db().indexedDB.open(makeRandomName(), "Indexed cursor range unit tests");
 
                 objectStore = connection.createObjectStore(makeRandomName(), "primary", true);
                 index = objectStore.createIndex(makeRandomName(), "secondary", true);
@@ -72,49 +76,49 @@
             }
 
             function testFullBoundedRange() {
-                var range = db.IDBKeyRange.bound('A', 'Z');
+                var range = db().IDBKeyRange.bound('A', 'Z');
                 var cursor = index.openCursor(range);
 
                 iterate(0, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testBoundedRange() {
-                var range = db.IDBKeyRange.bound('D', 'N');
+                var range = db().IDBKeyRange.bound('D', 'N');
                 var cursor = index.openCursor(range);
 
                 iterate(3, 13, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testOpenBoundedRange() {
-                var range = db.IDBKeyRange.bound('C', 'L', true, true);
+                var range = db().IDBKeyRange.bound('C', 'L', true, true);
                 var cursor = index.openCursor(range);
 
                 iterate(3, 10, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testLeftCloseBoundedRange() {
-                var range = db.IDBKeyRange.leftBound('T');
+                var range = db().IDBKeyRange.leftBound('T');
                 var cursor = index.openCursor(range);
 
                 iterate(19, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testLeftOpenBoundedRange() {
-                var range = db.IDBKeyRange.leftBound('J', true);
+                var range = db().IDBKeyRange.leftBound('J', true);
                 var cursor = index.openCursor(range);
 
                 iterate(10, 25, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testCloseRightBoundedRange() {
-                var range = db.IDBKeyRange.rightBound('M');
+                var range = db().IDBKeyRange.rightBound('M');
                 var cursor = index.openCursor(range);
 
                 iterate(0, 12, cursor, undefined, indexKeyLambda, indexValueLambda);
             }
 
             function testRightOpenBoundedRange() {
-                var range = db.IDBKeyRange.rightBound('P', true);
+                var range = db().IDBKeyRange.rightBound('P', true);
                 var cursor = index.openCursor(range);
 
                 iterate(0, 14, cursor, undefined, indexKeyLambda, indexValueLambda);
@@ -125,7 +129,7 @@
                 var expectedPrimaryKeys = ["Orange", "Tangerine", "Grape", "Apple", "Pomegranate"];
 
                 var cursor = fruitIndexByColor.openCursor();
-                alert(cursor.key);
+                //alert(cursor.key);
                 for (var index = 0; index < 4; index++) {
                     assertEquals(expectedIndexKeys[index], cursor.key);
                     assertObjectEquals(expectedPrimaryKeys[index], cursor.value);
@@ -141,7 +145,7 @@
                 var expectedIndexKeys = ["Orange", "Purple", "Red"];
                 var expectedPrimaryKeys = ["Orange", "Grape", "Apple"];
 
-                var cursor = fruitIndexByColor.openCursor(undefined, db.IDBCursor.NEXT_NO_DUPLICATE);
+                var cursor = fruitIndexByColor.openCursor(undefined, db().IDBCursor.NEXT_NO_DUPLICATE);
 
                 for (var index = 0; index < 2; index++) {
                     assertEquals(expectedIndexKeys[index], cursor.key);
@@ -158,7 +162,7 @@
                 var expectedIndexKeys = ["Red", "Purple", "Orange"];
                 var expectedPrimaryKeys = ["Pomegranate", "Grape", "Tangerine"];
 
-                var cursor = fruitIndexByColor.openCursor(undefined, db.IDBCursor.PREV_NO_DUPLICATE);
+                var cursor = fruitIndexByColor.openCursor(undefined, db().IDBCursor.PREV_NO_DUPLICATE);
 
                 for (var index = 0; index < 2; index++) {
                     assertEquals(expectedIndexKeys[index], cursor.key);
